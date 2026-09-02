@@ -1,5 +1,9 @@
 <<<<<<< HEAD
 data/
+.Rproj.user
+.RData
+.Ruserdata
+.Rhistory
 =======
 
 >>>>>>> 035c18a574bd53d3087ce8cb43e04ba68794a4e3
