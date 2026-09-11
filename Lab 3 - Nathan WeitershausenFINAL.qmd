@@ -1,0 +1,118 @@
+---
+title: "Lab 3"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+# Lab 3
+
+## Step 1
+
+```{r}
+met <- read.csv("C:/Users/nweit/Downloads/met_all.gz")
+```
+
+## Step 2
+
+```{r}
+dim(met)
+head(met)
+tail(met)
+```
+
+## Step 3
+
+```{r}
+str(met)
+```
+
+## Step 4
+
+```{r}
+table(met$year)
+table(met$day)
+table(met$hour)
+summary(met$temp)
+summary(met$elev)
+summary(met$wind.sp)
+```
+
+```{r}
+met$elev[met$elev==9999.0] <- NA
+summary(met$elev)
+```
+
+The highest weather station is at an eleveation of 4,113 m.
+
+```{r}
+met <- met[met$temp > -40, ]
+met <- met[order(met$temp), ]
+head(met)
+```
+
+## Step 5
+
+```{r}
+met <- met[met$temp > -15, ]
+met <- met[order(met$temp), ]
+head(met)
+```
+
+```{r}
+summary(met$temp)
+```
+
+Removed temperatures colder than -15C. The data set now has a minimum temperature of -3C.
+
+## Step 6
+
+```{r}
+elev <- met[met$elev == max(met$elev), ]
+summary(elev)
+```
+
+```{r}
+elev <- met[met$elev == max(met$elev, na.rm = TRUE),]
+summary(elev)
+
+cor(elev$temp, elev$wind.sp, use="complete")
+cor(elev$temp, elev$hour, use="complete")
+cor(elev$wind.sp, elev$day, use="complete")
+cor(elev$wind.sp, elev$hour, use="complete")
+cor(elev$temp, elev$day, use="complete")
+```
+
+## Step 7
+
+```{r}
+hist(met$elev, breaks=100)
+hist(met$temp)
+hist(met$wind.sp)
+```
+
+```{r}
+library(leaflet)
+leaflet(elev) |>
+  addProviderTiles('OpenStreetMap') |>
+  addCircles(lat=~lat,lng=~lon, opacity=1, fillOpacity=1, radius=100)
+```
+
+```{r}
+library(lubridate)
+elev$date <- with(elev, ymd_h(paste(year, month, day, hour, sep= ' ')))
+summary(elev$date)
+elev <- elev[order(elev$date), ]
+head(elev)
+```
+
+```{r}
+plot(elev$date, elev$temp, type='l')
+plot(elev$date, elev$wind.sp, type='l')
+```
+
+Based on the temperature and date time-series plot, there appears to be a sharp increase in temperature at the end of every seven days. For example, at August 5th and most noticeably at August 12th, there are sharp increases in temperature for the following date. For the wind speed and date time-series plot, it looks as if wind speeds increase every two weeks. The weeks of August 5th and 19th, have "low" wind speeds (0-10 units) while the weeks of August 12th and August 26th have "high" wind speeds (10-20 units).
+
+## Step 8
+
