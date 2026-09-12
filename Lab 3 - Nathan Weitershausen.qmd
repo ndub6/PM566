@@ -1,0 +1,156 @@
+---
+title: "Lab 3"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+
+## Step 1
+
+```{r}
+met <- read.csv("C:/Users/nweit/Downloads/met_all.gz")
+```
+
+## Step 2
+
+```{r}
+dim(met)
+head(met)
+tail(met)
+```
+
+## Step 3
+
+```{r}
+str(met)
+```
+
+## Step 4
+
+```{r}
+table(met$year)
+table(met$day)
+table(met$hour)
+summary(met$temp)
+summary(met$elev)
+summary(met$wind.sp)
+```
+
+```{r}
+met$elev[met$elev==9999.0] <- NA
+summary(met$elev)
+```
+
+The highest weather station is at an eleveation of 4,113 m.
+
+```{r}
+met <- met[met$temp > -40, ]
+met <- met[order(met$temp), ]
+head(met)
+```
+
+## Step 5
+
+```{r}
+met <- met[met$temp > -15, ]
+met <- met[order(met$temp), ]
+head(met)
+```
+
+```{r}
+summary(met$temp)
+```
+
+Removed temperatures colder than -15C. The data set now has a minimum temperature of -3C.
+
+## Step 6
+
+```{r}
+elev <- met[met$elev == max(met$elev), ]
+summary(elev)
+```
+
+```{r}
+elev <- met[met$elev == max(met$elev, na.rm = TRUE),]
+summary(elev)
+
+cor(elev$temp, elev$wind.sp, use="complete")
+cor(elev$temp, elev$hour, use="complete")
+cor(elev$wind.sp, elev$day, use="complete")
+cor(elev$wind.sp, elev$hour, use="complete")
+cor(elev$temp, elev$day, use="complete")
+```
+
+## Step 7
+
+```{r}
+hist(met$elev, breaks=100)
+hist(met$temp)
+hist(met$wind.sp)
+```
+
+```{r}
+library(leaflet)
+leaflet(elev) |>
+  addProviderTiles('OpenStreetMap') |>
+  addCircles(lat=~lat,lng=~lon, opacity=1, fillOpacity=1, radius=100)
+```
+
+```{r}
+library(lubridate)
+elev$date <- with(elev, ymd_h(paste(year, month, day, hour, sep= ' ')))
+summary(elev$date)
+elev <- elev[order(elev$date), ]
+head(elev)
+```
+
+```{r}
+plot(elev$date, elev$temp, type='l')
+plot(elev$date, elev$wind.sp, type='l')
+```
+
+Based on the temperature and date time-series plot, there appears to be a sharp increase in temperature at the end of every seven days. For example, at August 5th and most noticeably at August 12th, there are sharp increases in temperature for the following date. For the wind speed and date time-series plot, it looks as if windspeeds increase every two weeks. The weeks of August 5th and 19th, have "low" wind speeds (0-10 units) while the weeks of August 12th and August 26th have "high" windspeeds (10-20 units). When comparing the two plots, the dates with low temperatures coincide with the high windspeeds, and vice versa. 
+
+## Step 8
+
+Instead of looking at the weather station with the highest elevation, I wanted to examine the temperature and windspeed of the weather station with the lowest elevation (and its location). My thought process is that this weather station would record considerably higher temperatures and lower windspeeds.
+
+```{r}
+elev_min <- met[met$elev == min(met$elev, na.rm = TRUE),]
+summary(elev_min)
+
+
+cor(elev_min$temp, elev_min$wind.sp, use="complete")
+cor(elev_min$temp, elev_min$hour, use="complete")
+cor(elev_min$wind.sp, elev_min$day, use="complete")
+cor(elev_min$wind.sp, elev_min$hour, use="complete")
+cor(elev_min$temp, elev_min$day, use="complete")
+
+library(leaflet)
+leaflet(elev_min) |>
+  addProviderTiles('OpenStreetMap') |>
+  addCircles(lat=~lat,lng=~lon, opacity=1, fillOpacity=1, radius=100)
+
+library(lubridate)
+elev_min$date <- with(elev_min, ymd_h(paste(year, month, day, hour, sep= ' ')))
+summary(elev_min$date)
+elev_min <- elev_min[order(elev_min$date), ]
+head(elev_min)
+
+plot(elev_min$date, elev_min$temp, type='l')
+plot(elev_min$date, elev_min$wind.sp, type='l')
+```
+
+Re-using the code from the lab for the weather station with the lowest elevation reveals that it is in El Centro, California, which makes its high temperatures and low windspeeds reasonable. 
+
+Based on these two weather stations, there appears to be a relationship between temperature and windspeed, with lower temperatures occuring during high windspeeds and vice versa. To support this, I want to create a scatterplot that will show the relationship between temperature and windspeed.
+
+```{r}
+plot(met$wind.sp, met$temp)
+fit <- lm(temp ~ wind.sp, data = met)
+abline(fit, col = "red", lwd = 2)
+```
+
+Based on the plot and the trendline, my assumption does not appear true. I shouldn't have used the two "extreme" weather stations to make an assumption about the data, especially when one only has two weeks-worth of data. I think a further investigation into the data, taking weather station location into account, would be the next step. 
