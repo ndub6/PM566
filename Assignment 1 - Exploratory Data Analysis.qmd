@@ -6,29 +6,42 @@ editor: visual
 embed-resources: true
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
-```{r}
-1 + 1
-```
-
-You can add options to executable code like this
-
-```{r}
-#| echo: false
-2 * 2
-```
-
-The `echo: false` option disables the printing of code (only output is displayed).
-
 # Step 1
+
 ```{r}
-2002Data <- read.csv("C:/Users/")
+ '2002_Data' <- read.csv("C:/Users/nweit/OneDrive/Desktop/PM566/Assignment 1 Data/2002 PM2.5 Data.csv")
+dim(`2002_Data`)
+head(`2002_Data`)
+tail(`2002_Data`)
+str(`2002_Data`)
+summary(`2002_Data`)
+
+'2002-DMPMC' <- `2002_Data`$Daily.Mean.PM2.5.Concentration
+hist(`2002-DMPMC`,
+     main = "Distribution of Daily Mean PM 2.5 Concentration (2002)",
+     xlab = "Daily Mean PM 2.5 Concentration (micrograms per cubic meter)")
+```
+
+```{r}
+'2022_Data' <- read.csv("C:/Users/nweit/OneDrive/Desktop/PM566/Assignment 1 Data/2022 PM2.5 Data.csv")
+dim(`2022_Data`)
+head(`2022_Data`)
+tail(`2022_Data`)
+str(`2022_Data`)
+summary(`2022_Data`)
+
+'2022-DMPMC' <- `2022_Data`$Daily.Mean.PM2.5.Concentration
+hist(`2022-DMPMC`,
+     main = "Distribution of Daily Mean PM 2.5 Concentration (2022)",
+     xlab = "Daily Mean PM 2.5 Concentration (micrograms per cubic meter)")
+```
+
+## Summary
+
+While both datasets contain 22 variables, the 2002 dataset contains 15,976 observations and the 2022 dataset contains 59,918 observations. In 2002, the daily mean PM2.5 Concentration has a range of 0 to 104.3. In 2022, the daily mean PM2.5 Concentration has a range of -6.7 to 302.5, which may suggest an recording error, as PM2.5 Concentration values cannot be negative. The distributions of Daily Mean PM 2.5 Concentration between the two datasets are extremely different. According to the histograms and table views, in 2002, the majority of observations (4,101 or 25.7% of observations) lie within the 5-10 micrograms per cubic meter range, with a smooth drop off as concentration increases. In 2022, almost all observations (56,593 or 94.5% of observations) lie within the 0-20 micrograms per cubic meter range, with just a couple observations near 300 micrograms per cubic meter, and 343 observations lying in the -20 - 0 micrograms per cubic meter range. Both distributions are positively skewed, but it should be noted that the 2002 distribution ranges from 0 - 100 micrograms per cubic meter and the 2022 distribution ranges from -20 - 300 micrograms per cubic meter (before dataset cleaning).
+
+# Step 2
+```{r}
+
 ```
 
