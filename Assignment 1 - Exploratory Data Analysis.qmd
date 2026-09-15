@@ -41,7 +41,29 @@ hist(`2022-DMPMC`,
 While both datasets contain 22 variables, the 2002 dataset contains 15,976 observations and the 2022 dataset contains 59,918 observations. In 2002, the daily mean PM2.5 Concentration has a range of 0 to 104.3. In 2022, the daily mean PM2.5 Concentration has a range of -6.7 to 302.5, which may suggest an recording error, as PM2.5 Concentration values cannot be negative. The distributions of Daily Mean PM 2.5 Concentration between the two datasets are extremely different. According to the histograms and table views, in 2002, the majority of observations (4,101 or 25.7% of observations) lie within the 5-10 micrograms per cubic meter range, with a smooth drop off as concentration increases. In 2022, almost all observations (56,593 or 94.5% of observations) lie within the 0-20 micrograms per cubic meter range, with just a couple observations near 300 micrograms per cubic meter, and 343 observations lying in the -20 - 0 micrograms per cubic meter range. Both distributions are positively skewed, but it should be noted that the 2002 distribution ranges from 0 - 100 micrograms per cubic meter and the 2022 distribution ranges from -20 - 300 micrograms per cubic meter (before dataset cleaning).
 
 # Step 2
+
 ```{r}
+Combined_Data <- merge(`2002_Data`, `2022_Data`, all = TRUE)
+
+Combined_Data$Date <- as.Date(Combined_Data$Date, format = "%m/%d/%Y")
+Combined_Data$Year <- format(Combined_Data$Date, "%Y")
+
+names(Combined_Data)[names(Combined_Data) == "Daily.Mean.PM2.5.Concentration"] <- "PM2.5"
+
+head(Combined_Data)
+tail(Combined_Data)
+summary(Combined_Data)
+```
+
+# Step 3
+
+```{r}
+library(leaflet)
+
+m <- leaflet(Combined_Data)
+m <- addProviderTiles(providers$CartoDB.Positron)
+m <- addMarkers(lng = Combined_Data$Site.Longitude, lat = Combined_Data$Site.Latitude)
 
 ```
+
 
