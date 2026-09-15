@@ -60,10 +60,31 @@ summary(Combined_Data)
 ```{r}
 library(leaflet)
 
-m <- leaflet(Combined_Data)
-m <- addProviderTiles(providers$CartoDB.Positron)
-m <- addMarkers(lng = Combined_Data$Site.Longitude, lat = Combined_Data$Site.Latitude)
+# sites: data.frame with lat, lng, year (hundreds of rows)
 
+pal <- colorFactor(palette = c("#00FFFF", "#FF0000"), domain = Combined_Data$Year)
+
+leaflet(Combined_Data) |>
+  addTiles() |>
+  addCircleMarkers(
+    lng = Combined_Data$Site.Longitude, 
+    lat = Combined_Data$Site.Latitude, 
+    color = ~pal(Combined_Data$Year), 
+    radius = 5,
+    stroke = TRUE,
+    weight = 0.5,
+    fillOpacity = 0.5
+  ) |>
+  addLegend(
+    position = "bottomleft",
+    pal = pal,
+    values = Combined_Data$Year,
+    title = "Year",
+    opacity = 1
+  ) 
 ```
 
+## Summary
+Based on the map, it appears that the distribution has expanded from 2002 to 2022. Some sites overlap, meaning that they exist in both years, but there are considerably more 2022 sites(red) than 2002 sites (blue). The "hotspots" appear to be Southern California, the Bay Area, and the Sacramento Area, while Northern California and Mojave are sparsely populated with sites. This makes sense given that the former locations are densely populated and the latter are not. 
 
+# Step 4
