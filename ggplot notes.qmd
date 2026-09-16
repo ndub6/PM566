@@ -1,0 +1,496 @@
+---
+title: "Lab 3"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+## Step 1
+
+```{r}
+met <- read.csv("C:/Users/nweit/Downloads/met_all.gz")
+```
+
+## Step 2
+
+```{r}
+dim(met)
+head(met)
+tail(met)
+```
+
+## Step 3
+
+```{r}
+str(met)
+```
+
+## Step 4
+
+```{r}
+table(met$year)
+table(met$day)
+table(met$hour)
+summary(met$temp)
+summary(met$elev)
+summary(met$wind.sp)
+```
+
+```{r}
+met$elev[met$elev==9999.0] <- NA
+summary(met$elev)
+```
+
+The highest weather station is at an eleveation of 4,113 m.
+
+```{r}
+met <- met[met$temp > -40, ]
+met <- met[order(met$temp), ]
+head(met)
+```
+
+## Step 5
+
+```{r}
+met <- met[met$temp > -15, ]
+met <- met[order(met$temp), ]
+head(met)
+```
+
+```{r}
+summary(met$temp)
+```
+
+Removed temperatures colder than -15C. The data set now has a minimum temperature of -3C.
+
+## Step 6
+
+```{r}
+elev <- met[met$elev == max(met$elev), ]
+summary(elev)
+```
+
+```{r}
+elev <- met[met$elev == max(met$elev, na.rm = TRUE),]
+summary(elev)
+
+cor(elev$temp, elev$wind.sp, use="complete")
+cor(elev$temp, elev$hour, use="complete")
+cor(elev$wind.sp, elev$day, use="complete")
+cor(elev$wind.sp, elev$hour, use="complete")
+cor(elev$temp, elev$day, use="complete")
+```
+
+## Step 7
+
+```{r}
+hist(met$elev, breaks=100)
+hist(met$temp)
+hist(met$wind.sp)
+```
+
+```{r}
+library(leaflet)
+leaflet(elev) |>
+  addProviderTiles('OpenStreetMap') |>
+  addCircles(lat=~lat,lng=~lon, opacity=1, fillOpacity=1, radius=100)
+```
+
+```{r}
+library(lubridate)
+elev$date <- with(elev, ymd_h(paste(year, month, day, hour, sep= ' ')))
+summary(elev$date)
+elev <- elev[order(elev$date), ]
+head(elev)
+```
+
+```{r}
+plot(elev$date, elev$temp, type='l')
+plot(elev$date, elev$wind.sp, type='l')
+```
+
+Based on the temperature and date time-series plot, there appears to be a sharp increase in temperature at the end of every seven days. For example, at August 5th and most noticeably at August 12th, there are sharp increases in temperature for the following date. For the wind speed and date time-series plot, it looks as if windspeeds increase every two weeks. The weeks of August 5th and 19th, have "low" wind speeds (0-10 units) while the weeks of August 12th and August 26th have "high" windspeeds (10-20 units). When comparing the two plots, the dates with low temperatures coincide with the high windspeeds, and vice versa.
+
+## Step 8
+
+Instead of looking at the weather station with the highest elevation, I wanted to examine the temperature and windspeed of the weather station with the lowest elevation (and its location). My thought process is that this weather station would record considerably higher temperatures and lower windspeeds.
+
+```{r}
+elev_min <- met[met$elev == min(met$elev, na.rm = TRUE),]
+summary(elev_min)
+
+
+cor(elev_min$temp, elev_min$wind.sp, use="complete")
+cor(elev_min$temp, elev_min$hour, use="complete")
+cor(elev_min$wind.sp, elev_min$day, use="complete")
+cor(elev_min$wind.sp, elev_min$hour, use="complete")
+cor(elev_min$temp, elev_min$day, use="complete")
+
+library(leaflet)
+leaflet(elev_min) |>
+  addProviderTiles('OpenStreetMap') |>
+  addCircles(lat=~lat,lng=~lon, opacity=1, fillOpacity=1, radius=100)
+
+library(lubridate)
+elev_min$date <- with(elev_min, ymd_h(paste(year, month, day, hour, sep= ' ')))
+summary(elev_min$date)
+elev_min <- elev_min[order(elev_min$date), ]
+head(elev_min)
+
+plot(elev_min$date, elev_min$temp, type='l')
+plot(elev_min$date, elev_min$wind.sp, type='l')
+```
+
+Re-using the code from the lab for the weather station with the lowest elevation reveals that it is in El Centro, California, which makes its high temperatures and low windspeeds reasonable.
+
+Based on these two weather stations, there appears to be a relationship between temperature and windspeed, with lower temperatures occuring during high windspeeds and vice versa. To support this, I want to create a scatterplot that will show the relationship between temperature and windspeed.
+
+```{r}
+plot(met$wind.sp, met$temp)
+fit <- lm(temp ~ wind.sp, data = met)
+abline(fit, col = "red", lwd = 2)
+```
+
+Based on the plot and the trendline, my assumption does not appear true. I shouldn't have used the two "extreme" weather stations to make an assumption about the data, especially when one only has two weeks-worth of data. I think a further investigation into the data, taking weather station location into account, would be the next step.
+
+```{r}
+# Reading the data, filtering, and replacing bad values with NAs
+met <- met[met$temp > -10, ]
+met$elev[met$elev == 9999.0] <- NA
+
+# Creating an aggregated version of the dataset
+library(dplyr)
+met_avg <- summarize(met,
+                     temp =     mean(temp, na.rm = TRUE),
+                     rh =       mean(rh, na.rm = TRUE),
+                     wind.sp =  mean(wind.sp, na.rm = TRUE),
+                     vis.dist = mean(vis.dist, na.rm = TRUE),
+                     lat =      mean(lat, na.rm = TRUE),
+                     lon =      mean(lon, na.rm = TRUE),
+                     elev =     mean(elev, na.rm = TRUE),
+                     .by = c(USAFID, day))
+```
+
+```{r}
+# New variables using ifelse()
+met_avg$region <- ifelse(met_avg$lon > -98, "east", "west")
+met_avg$elev_cat <- ifelse(met_avg$elev > 252, "high", "low")
+
+# Using the cut() function to create more than 2 categories
+met_avg$vis_cat <- cut(met_avg$vis.dist,
+                       breaks = c(0, 1000, 6000, 10000, Inf),
+                       labels = c("fog", "mist", "haze", "clear"),
+                       right = FALSE)
+```
+
+```{r}
+plot(met_avg$temp, met_avg$rh)
+```
+
+```{r}
+library(ggplot2)
+ggplot(data = met_avg) + 
+  geom_point(mapping = aes(x = temp, y = rh))
+```
+
+```{r}
+ggplot(data = met_avg) + 
+  geom_point(mapping = aes(x = temp, y = rh, color = region))
+```
+
+```{r}
+# control transparency using alpha
+ggplot(data = met_avg) + 
+  geom_point(mapping = aes(x = temp, y = rh, alpha = 0.3))
+```
+
+```{r}
+# control transparency using alpha
+ggplot(data = met_avg) + 
+  geom_point(mapping = aes(x = temp, y = rh, alpha = rh))
+```
+
+```{r}
+# control point shape (up to 6 shapes)
+ggplot(data = met_avg) + 
+  geom_point(mapping = aes(x = temp, y = rh, shape = region))
+```
+
+```{r}
+# control aesthetics manually by placing geom_function outside of aes()
+
+ggplot(data = met_avg) + 
+  geom_point(mapping = aes(x = temp, y = rh), color = "blue")
+```
+
+```{r}
+# Facets are useful for categorical variables
+
+met_avg[!is.na(met_avg$region), ] %>% 
+  ggplot() + 
+  geom_point(mapping = aes(x = temp, y = rh, color=region)) + 
+  facet_wrap(~ region, nrow = 1)
+```
+
+```{r}
+# Facet by two variables
+
+met_avg[!is.na(met_avg$region) & !is.na(met_avg$elev_cat), ] %>% 
+  ggplot() + 
+  geom_point(mapping = aes(x = temp, y = rh)) + 
+  facet_grid(region ~ elev_cat)
+```
+
+```{r}
+# Base R is not good at this, you can make multiple plots within a single window by using layout(), but you still have to make each plot manually
+
+# create a matrix, split it with plots
+
+layout(matrix(1:2, nrow=1))
+plot(met_avg$temp[which(met_avg$region == 'east')], met_avg$rh[which(met_avg$region == 'east')], pch = 16, col = 2)
+plot(met_avg$temp[which(met_avg$region == 'west')], met_avg$rh[which(met_avg$region == 'west')], pch = 16, col = 4)
+```
+
+```{r}
+# plots avg y to show line fitted to the data
+
+library(cowplot)
+
+scatterplot <- ggplot(data = met_avg) + geom_point(mapping = aes(x = temp, y = rh))
+lineplot    <- ggplot(data = met_avg) + geom_smooth(mapping = aes(x = temp, y = rh))
+
+plot_grid(scatterplot, lineplot, labels = "AUTO")
+```
+
+```{r}
+# note that not eveyr aesthetic works with every geom function, but now there are new ones we can use
+ggplot(data = met_avg) + 
+  geom_smooth(mapping = aes(x = temp, y = rh, linetype = region))
+```
+
+```{r}
+hist(met_avg$temp)
+```
+
+```{r}
+ggplot(met_avg) + 
+  geom_histogram(mapping = aes(x = temp))
+```
+
+```{r}
+boxplot(met_avg$temp ~ met_avg$elev_cat)
+```
+
+```{r}
+met_avg[!is.na(met_avg$elev_cat), ] %>% 
+  ggplot()+
+  geom_boxplot(mapping=aes(x=elev_cat, y=temp, fill=elev_cat)) 
+```
+
+```{r}
+plot(met_avg$day[met_avg$elev==4113], met_avg$temp[met_avg$elev==4113], type = 'l')
+```
+
+
+```{r}
+ggplot(data = met_avg[met_avg$elev==4113, ])+
+ geom_line(mapping=aes(x=day, y=temp))
+```
+
+```{r}
+# add lines() to existing plot
+plot(1:10, pch = 16)
+lines(10:1, col = 2, lwd = 3) # add a thick red line
+```
+
+```{r}
+world_map <- map_data("world")
+ggplot(data = world_map, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill = "darkgray", color = "white")
+```
+```{r}
+us_map <- map_data("state")
+ggplot(data = us_map, aes(x = long, y = lat, fill = region)) +
+  geom_polygon(color = "white")
+```
+
+```{r}
+# Layering geoms
+met_avg[!is.na(met_avg$region), ] %>%
+  ggplot() + 
+  geom_point(mapping = aes(x = temp, y = rh, color = region))+
+  geom_smooth(mapping = aes(x = temp, y = rh, linetype = region))
+```
+
+```{r}
+# avoid repetition of aesthetics by passing a set of mappings
+
+met_avg[!is.na(met_avg$region), ] %>%
+  ggplot(mapping = aes(x = temp, y = rh, color=region, linetype=region)) +
+  geom_point() + 
+  geom_smooth()
+```
+
+```{r}
+# geom_smooth has options, here we add a regression line. Notice that the "black" col overides the region color.
+
+met_avg[!is.na(met_avg$region), ] %>%
+  ggplot(mapping = aes(x = temp, y = rh, color = region, linetype = region)) +
+  geom_point() + 
+  geom_smooth(method = lm, se = FALSE, col = "black")
+```
+
+```{r}
+# local mapping (geom_point) overides global mapping (ggplot)
+met_avg[!is.na(met_avg$region), ] %>%
+  ggplot(mapping = aes(x = temp, y = rh)) + 
+  geom_point(mapping = aes(color = region)) + 
+  geom_smooth()
+```
+
+```{r}
+met_avg[!is.na(met_avg$vis_cat), ] %>%
+  ggplot(mapping = aes(x = temp, y = rh, alpha = 0.5)) + 
+  geom_point(mapping = aes(color = vis_cat)) + 
+  geom_smooth(se = FALSE)
+```
+
+```{r}
+# want to know frequencies of observations 
+
+tab <- table(met_avg$vis_cat)
+barplot(tab)
+```
+
+```{r}
+# ggplot version
+met_avg %>%
+filter(!is.na(met_avg$vis_cat)) %>% 
+  ggplot() + 
+  geom_bar(mapping = aes(x = vis_cat))
+```
+
+```{r}
+# plot proportions rather than counts
+met_avg %>%
+filter(!is.na(met_avg$vis_cat)) %>% 
+  ggplot() + 
+  geom_bar(mapping = aes(x = vis_cat))
+```
+
+```{r}
+#customize color and fill
+
+met_avg[!is.na(met_avg$vis_cat), ] %>%
+  ggplot() + 
+  geom_bar(mapping = aes(x = vis_cat, color = vis_cat, fill=vis_cat))
+```
+
+```{r}
+#fill with another variable (region), can change the color scale
+met_avg[!is.na(met_avg$vis_cat) & met_avg$vis_cat != "clear", ] %>%
+  ggplot() + 
+  geom_bar(mapping = aes(x = vis_cat, fill = region))+
+  scale_fill_viridis_d() 
+```
+
+```{r}
+#Base R version
+tab <- table(met_avg$region[!is.na(met_avg$vis_cat) & met_avg$vis_cat != "clear"],
+             met_avg$vis_cat[!is.na(met_avg$vis_cat) & met_avg$vis_cat != "clear"])
+barplot(tab, col = c(2,4))
+```
+
+```{r}
+# dodge function places barplots next to each other, easier to compare individual values
+met_avg[!is.na(met_avg$vis_cat) & met_avg$vis_cat != "clear", ] %>%
+  ggplot() + 
+  geom_bar(mapping = aes(x = elev_cat, fill = vis_cat), position = "dodge")
+```
+
+```{r}
+# statistical transformation with ggplot
+
+l <- met_avg[!is.na(met_avg$vis_cat) & met_avg$vis_cat != "clear", ] %>%
+  ggplot() + 
+    stat_summary(mapping = aes(x = vis_cat, y = temp),
+    fun.min = min,
+    fun.max = max,
+    fun = median)
+l
+```
+
+```{r}
+# jitter adds noise to each point, spreads them out to avoid overlapping
+nojitter <- ggplot(data = met_avg[1:1000,]) + 
+  geom_point(mapping = aes(x = vis_cat, y = temp))
+
+jitter <- ggplot(data = met_avg[1:1000,]) + 
+  geom_point(mapping = aes(x = vis_cat, y = temp), position = "jitter")
+
+plot_grid(nojitter, jitter, labels = "AUTO")
+```
+
+```{r} 
+# flipping x and y axes
+
+unflipped <- ggplot(data = met_avg) + 
+  geom_boxplot(mapping = aes(x = vis_cat, y = temp))
+
+flipped <- ggplot(data = met_avg) + 
+  geom_boxplot(mapping = aes(x = vis_cat, y = temp)) +
+  coord_flip()
+plot_grid(unflipped, flipped, labels = "AUTO")
+```
+
+```{r}
+# Control aspect ratios
+bar <- ggplot(data = met_avg) + 
+  geom_bar(mapping = aes(x = elev_cat, fill = elev_cat), show.legend = FALSE, width = 1) + 
+  theme(aspect.ratio = 1) +
+  labs(x = NULL, y = NULL)
+```
+
+```{r}
+bar + coord_flip()
+bar + coord_polar()
+```
+
+```{r}
+#Modify labels and titles
+ggplot(met_avg[!is.na(met_avg$region), ]) +
+  geom_point(aes(temp, rh, color = region)) + 
+  labs(title = "Weather Station Data") + 
+  labs(x = expression("Temperature" *~ degree * C), y = "Relative Humidity")
+```
+
+```{r}
+# change theme (here, the font changes)
+ggplot(met_avg[!is.na(met_avg$region), ]) +
+  geom_point(aes(temp, rh, color = region)) + 
+  labs(title = "Weather Station Data") + 
+  labs(x = expression("Temperature"*~degree*C), y = "Relative Humidity")+
+  theme_bw(base_family = "Times")
+```
+
+```{r}
+#change legend
+ggplot(met_avg[!is.na(met_avg$region), ]) +
+  geom_point(aes(temp, rh, color = region)) + 
+  labs(title = "Weather Station Data",x = expression("Temperature"*~degree*C), y = "Relative Humidity")+
+  scale_color_manual(name="Region", labels=c("East", "West"), values=c("east"="lightblue", "west"="purple"))+
+  theme_bw(base_family = "Times")
+```
+
+```{r}
+#Change colorscales
+ggplot(data = met_avg) + 
+  geom_point(mapping=aes(x=temp, y=rh, color=elev))+
+  scale_color_gradient(low="blue", high="red")
+
+ggplot(data=met_avg) + 
+  geom_point(mapping= aes(x=temp, y=rh, color = cut(elev, b=5))) + 
+  scale_color_manual(values = viridis::viridis(6))
+```
+
