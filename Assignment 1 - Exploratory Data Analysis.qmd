@@ -85,6 +85,77 @@ leaflet(Combined_Data) |>
 ```
 
 ## Summary
-Based on the map, it appears that the distribution has expanded from 2002 to 2022. Some sites overlap, meaning that they exist in both years, but there are considerably more 2022 sites(red) than 2002 sites (blue). The "hotspots" appear to be Southern California, the Bay Area, and the Sacramento Area, while Northern California and Mojave are sparsely populated with sites. This makes sense given that the former locations are densely populated and the latter are not. 
+
+Based on the map, it appears that the distribution has expanded from 2002 to 2022. Some sites overlap, meaning that they exist in both years, but there are considerably more 2022 sites(red) than 2002 sites (blue). The "hotspots" appear to be Southern California, the Bay Area, and the Sacramento Area, while Northern California and Mojave are sparsely populated with sites. This makes sense given that the former locations are densely populated and the latter are not.
 
 # Step 4
+
+```{r}
+summary(Combined_Data)
+
+colSums(is.na(Combined_Data))
+colMeans(is.na(Combined_Data))
+
+colSums(Combined_Data < 0)
+sum(Combined_Data$PM2.5 < 0, na.rm = TRUE)
+mean(Combined_Data$PM2.5 < 0, na.rm = TRUE)
+
+flag_value <- is.na(Combined_Data$PM2.5) |
+  Combined_Data$PM2.5 < 0
+
+Proporption_2002 <- mean(flag_value[Combined_Data$Year == 2002])
+Proporption_2022 <- mean(flag_value[Combined_Data$Year == 2022])
+
+data.frame(Year = c(2002, 2022), Proportion_MI = 100 * c(Proporption_2002, Proporption_2022))
+```
+
+## Summary
+
+When looking for missing values (N/A values), I found that the CBSA.Code column had 5,498 instances and all other variables had 0 instances. When looking at implausible values for the main variable, PM2.5, I found that 215 observations were below 0. I determined that any values below 0 were implausible because PM2.5 is measured in micrograms per cubic meter, meaning that the lowest possible value it could be is 0, as there cannot be negative micrograms per cubic meter of something. I did not classify those extremely high PM2.5 as implausible, as the concentration may rise to such levels in wildfires. The proportion of these implausible values differs between 2002 and 2022, with the former having 0 implausible values and the latter having \~0.36% of observations being implausible.
+
+# Step 5
+
+Main Question: Did daily concentrations of PM2.5 decreased in California over the 20 years spanning from 2002 to 2022?
+
+## Level 1: State.
+
+```{r}
+Summary_Data <- data.frame( 
+  Year = as.numeric(as.character(Combined_Data$Year)),
+  County = Combined_Data$County,
+  Site = Combined_Data$Local.Site.Name,
+  PM2.5 = as.numeric(as.character(Combined_Data$PM2.5))
+  )
+
+Summary_Data <- Summary_Data[
+  !is.na(Summary_Data$PM2.5) &
+  !is.na(Summary_Data$County) &
+  !is.na(Summary_Data$Site) &
+    Summary_Data$PM2.5 >= 0,
+    ]
+
+by(Summary_Data$PM2.5, Summary_Data$Year, summary)
+
+boxplot(PM2.5 ~ Year, data = Summary_Data)
+
+PM2.5_2002 <- Summary_Data$PM2.5[Summary_Data$Year == 2002]
+PM2.5_2022 <- Summary_Data$PM2.5[Summary_Data$Year == 2022]
+hist(PM2.5_2002)
+hist(PM2.5_2022)
+```
+
+### Summary
+
+At the state level, the median and mean PM2.5 concentrations have decreased to about half that of the median and mean of PM2.5 concentrations in 2002. Along with that, most PM2.5 concentrations are more frequently in the 0-25 micrograms per cubic meter in 2022, which shows improvement from 2002, where concentrations ranged from 0 to 100. 
+
+## Level 2: County.
+
+```{r}
+by(Summary_Data$PM2.5, list(County = Summary_Data$County,Year = Summary_Data$Year), summary)
+```
+
+## Level 3: City.
+
+```{r}
+by(Summary_Data$PM2.5, list(City = Summary_Data$Site,Year = Summary_Data$Year), summary)
+```
