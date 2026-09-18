@@ -143,7 +143,7 @@ I selected 'gganimate' to animate the average temperature across all stations ea
 ```{r}
 library(ggplot2)
 library(gganimate)
-library(av)
+library(gifski)
 
 met2 <- met2[!is.na(met2$day), ]
 met2$day <- as.numeric(met2$day)
@@ -154,7 +154,7 @@ avg <- ggplot(met2, aes(day, temp, group = 1)) +
   labs(title="Average Daily Temperature in August 2019", x = "Day", y = "Average Temperature") + 
   transition_reveal(day)
 
-animation <- animate(avg, nframes = 50, fps = 10, width = 800, height = 500, renderer = av_renderer())
+animation <- animate(avg, nframes = 50, fps = 10, width = 800, height = 500, renderer = gifski_renderer())
 
 
 ```
