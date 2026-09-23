@@ -117,7 +117,7 @@ When looking for missing values (N/A values), I found that the CBSA.Code column 
 
 Main Question: Did daily concentrations of PM2.5 decreased in California over the 20 years spanning from 2002 to 2022?
 
-## Level 1: State.
+## Level 1: State
 
 ```{r}
 Summary_Data <- data.frame( 
@@ -131,31 +131,321 @@ Summary_Data <- Summary_Data[
   !is.na(Summary_Data$PM2.5) &
   !is.na(Summary_Data$County) &
   !is.na(Summary_Data$Site) &
+  !is.na(Summary_Data$Year) &
+    Summary_Data$PM2.5 >= 0,
+    ] 
+
+State_Data <- Summary_Data[
+  !is.na(Summary_Data$PM2.5) &
+  !is.na(Summary_Data$County) &
+  !is.na(Summary_Data$Site) &
     Summary_Data$PM2.5 >= 0,
     ]
 
-by(Summary_Data$PM2.5, Summary_Data$Year, summary)
+by(State_Data$PM2.5, State_Data$Year, summary)
 
-boxplot(PM2.5 ~ Year, data = Summary_Data)
+boxplot(PM2.5 ~ Year, data = State_Data)
 
-PM2.5_2002 <- Summary_Data$PM2.5[Summary_Data$Year == 2002]
-PM2.5_2022 <- Summary_Data$PM2.5[Summary_Data$Year == 2022]
+PM2.5_2002 <- State_Data$PM2.5[State_Data$Year == 2002]
+PM2.5_2022 <- State_Data$PM2.5[State_Data$Year == 2022]
 hist(PM2.5_2002)
 hist(PM2.5_2022)
 ```
 
 ### Summary
 
-At the state level, the median and mean PM2.5 concentrations have decreased to about half that of the median and mean of PM2.5 concentrations in 2002. Along with that, most PM2.5 concentrations are more frequently in the 0-25 micrograms per cubic meter in 2022, which shows improvement from 2002, where concentrations ranged from 0 to 100. 
+At the state level, the median and mean PM2.5 concentrations have decreased to about half that of the median and mean of PM2.5 concentrations in 2002. Along with that, most PM2.5 concentrations are more frequently in the 0-25 micrograms per cubic meter in 2022, which shows improvement from 2002, where concentrations ranged from 0 to 100.
 
-## Level 2: County.
+## Level 2: County
 
 ```{r}
+County_Data <- Summary_Data[
+  !is.na(Summary_Data$PM2.5) &
+  !is.na(Summary_Data$County) &
+  Summary_Data$PM2.5 >= 0,
+]
+
+County_Means <- aggregate(
+  PM2.5 ~ County + Year,
+  data = County_Data,
+  FUN = mean
+)
+
+County_Means
+
 by(Summary_Data$PM2.5, list(County = Summary_Data$County,Year = Summary_Data$Year), summary)
+
+plot(
+  NA,
+  xlim = c(2000, 2025),
+  ylim = range(County_Means$PM2.5, na.rm = TRUE),
+  xaxt = "n",
+  xlab = "Year",
+  ylab = "Mean PM2.5 Concentration",
+  main = "Change in Mean PM2.5 by County from 2002 to 2022"
+)
+
+axis(
+  side = 1,
+  at = c(2002, 2022),
+  labels = c("2002", "2022")
+)
+
+County_List <- unique(County_Means$County)
+
+for (County_Name in County_List) {
+County_Values <- County_Means[County_Means$County == County_Name,]
+if (
+    2002 %in% County_Values$Year &&
+    2022 %in% County_Values$Year
+  ) {
+
+    County_Values <- County_Values[
+      order(County_Values$Year),
+    ]
+
+    lines(
+      County_Values$Year,
+      County_Values$PM2.5,
+      type = "o",
+      pch = 19,
+      col = rgb(0.2, 0.4, 0.8, 0.5)
+    )
+
+    text(
+      x = 2022.5,
+      y = County_Values$PM2.5[
+        County_Values$Year == 2022
+      ],
+      labels = County_Name,
+      pos = 4,
+      cex = 0.4
+    )
+  }
+}
+
+Means_2002 <- County_Means[
+  County_Means$Year == 2002,
+  c("County", "PM2.5")
+]
+
+Means_2022 <- County_Means[
+  County_Means$Year == 2022,
+  c("County", "PM2.5")
+]
+
+names(Means_2002)[2] <- "Mean_2002"
+names(Means_2022)[2] <- "Mean_2022"
+
+County_Comparison <- merge(
+  Means_2002,
+  Means_2022,
+  by = "County"
+)
+
+County_Comparison$Change <-
+  County_Comparison$Mean_2022 -
+  County_Comparison$Mean_2002
+
+County_Comparison <- County_Comparison[
+  order(County_Comparison$Change),
+]
+
+plot_positions <- seq_len(nrow(County_Comparison))
+
+par(mar = c(5, 10, 4, 2))
+
+plot(
+  NA,
+  xlim = range(
+    County_Comparison$Mean_2002,
+    County_Comparison$Mean_2022
+  ),
+  ylim = c(0.5, nrow(County_Comparison) + 0.5),
+  yaxt = "n",
+  xlab = "Mean PM2.5 Concentration",
+  ylab = "",
+  main = "Change in County Mean PM2.5 Concentrations from 2002 to 2022"
+)
+
+axis(
+  side = 2,
+  at = plot_positions,
+  labels = County_Comparison$County,
+  las = 1,
+  cex.axis = 0.65
+)
+
+segments(
+  x0 = County_Comparison$Mean_2002,
+  y0 = plot_positions,
+  x1 = County_Comparison$Mean_2022,
+  y1 = plot_positions,
+  col = "gray",
+  lwd = 2
+)
+
+points(
+  County_Comparison$Mean_2002,
+  plot_positions,
+  pch = 19,
+  col = "blue"
+)
+
+points(
+  County_Comparison$Mean_2022,
+  plot_positions,
+  pch = 19,
+  col = "red"
+)
+
+legend(
+  "topright",
+  legend = c("2002", "2022"),
+  col = c("blue", "red"),
+  pch = 19,
+  bty = "n"
+)
+
+par(mar = c(5, 4, 4, 2) + 0.1)
 ```
 
-## Level 3: City.
+## Summary
+
+Based on the graph, it appears that the mean PM2.5 concentrations have decreased from 2002 to 2022 in most counties. There are a total of six counties that had an increase in mean PM2.5 concentrations since 2002.
+
+## Level 3: City
 
 ```{r}
-by(Summary_Data$PM2.5, list(City = Summary_Data$Site,Year = Summary_Data$Year), summary)
+unique(
+  Summary_Data$County[
+    grepl(
+      "Los Angeles",
+      Summary_Data$County,
+      ignore.case = TRUE
+    )
+  ]
+)
+
+LA_Data <- Summary_Data[
+  Summary_Data$County == "Los Angeles" &
+  Summary_Data$Year %in% c(2002, 2022) &
+  !is.na(Summary_Data$Site) &
+  !is.na(Summary_Data$PM2.5) &
+    trimws(as.character(Summary_Data$Site)) != "" &
+  Summary_Data$PM2.5 >= 0,
+]
+
+LA_Data <- droplevels(LA_Data)
+
+unique(LA_Data$Site)
+table(LA_Data$Site, LA_Data$Year)
+Site_Means <- aggregate(
+  PM2.5 ~ Site + Year,
+  data = LA_Data,
+  FUN = mean
+)
+
+Site_Means
+
+by(LA_Data$PM2.5,list(Site = LA_Data$Site,Year = LA_Data$Year),
+  summary
+)
+
+Site_Means <- aggregate(
+  PM2.5 ~ Site + Year,
+  data = LA_Data,
+  FUN = mean
+)
+
+Sites_2002 <- Site_Means[
+  Site_Means$Year == 2002,
+  c("Site", "PM2.5")
+]
+
+Sites_2022 <- Site_Means[
+  Site_Means$Year == 2022,
+  c("Site", "PM2.5")
+]
+
+names(Sites_2002)[2] <- "Mean_2002"
+names(Sites_2022)[2] <- "Mean_2022"
+
+Site_Comparison <- merge(
+  Sites_2002,
+  Sites_2022,
+  by = "Site"
+)
+
+Site_Comparison$Change <-
+  Site_Comparison$Mean_2022 -
+  Site_Comparison$Mean_2002
+
+Site_Comparison <- Site_Comparison[
+  order(Site_Comparison$Change),
+]
+
+positions <- seq_len(nrow(Site_Comparison))
+
+par(mar = c(5, 10, 4, 2))
+
+plot(
+  NA,
+  xlim = range(
+    Site_Comparison$Mean_2002,
+    Site_Comparison$Mean_2022
+  ),
+  ylim = c(0.5, nrow(Site_Comparison) + 0.5),
+  yaxt = "n",
+  xlab = "Mean PM2.5 Concentration",
+  ylab = "",
+  main = "Comparison of Mean PM2.5 Concentration in Los Angeles County Sites from 2002 and 2022"
+)
+
+axis(
+  side = 2,
+  at = positions,
+  labels = Site_Comparison$Site,
+  las = 1,
+  cex.axis = 0.7
+)
+
+segments(
+  x0 = Site_Comparison$Mean_2002,
+  y0 = positions,
+  x1 = Site_Comparison$Mean_2022,
+  y1 = positions,
+  col = "gray",
+  lwd = 2
+)
+
+points(
+  Site_Comparison$Mean_2002,
+  positions,
+  pch = 19,
+  col = "blue",
+  cex = 1.2
+)
+
+points(
+  Site_Comparison$Mean_2022,
+  positions,
+  pch = 19,
+  col = "red",
+  cex = 1.2
+)
+
+legend(
+  "topright",
+  legend = c("2002", "2022"),
+  col = c("blue", "red"),
+  pch = 19,
+  bty = "n"
+)
+
+par(mar = c(5, 4, 4, 2) + 0.1)
 ```
+
+## Summary
+
+Based on the graph, it appears that all the sites in Los Angeles county have shown decreases in mean PM2.5 concentrations since 2002.
