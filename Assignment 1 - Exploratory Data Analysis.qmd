@@ -60,9 +60,7 @@ summary(Combined_Data)
 ```{r}
 library(leaflet)
 
-# sites: data.frame with lat, lng, year (hundreds of rows)
-
-pal <- colorFactor(palette = c("#00FFFF", "#FF0000"), domain = Combined_Data$Year)
+pal <- colorFactor(palette = c("blue", "red"), domain = Combined_Data$Year)
 
 leaflet(Combined_Data) |>
   addTiles() |>
@@ -73,7 +71,7 @@ leaflet(Combined_Data) |>
     radius = 5,
     stroke = TRUE,
     weight = 0.5,
-    fillOpacity = 0.5
+    fillOpacity = 0.3
   ) |>
   addLegend(
     position = "bottomleft",
@@ -86,7 +84,7 @@ leaflet(Combined_Data) |>
 
 ## Summary
 
-Based on the map, it appears that the distribution has expanded from 2002 to 2022. Some sites overlap, meaning that they exist in both years, but there are considerably more 2022 sites(red) than 2002 sites (blue). The "hotspots" appear to be Southern California, the Bay Area, and the Sacramento Area, while Northern California and Mojave are sparsely populated with sites. This makes sense given that the former locations are densely populated and the latter are not.
+Based on the map, it appears that the distribution has expanded from 2002 to 2022. Some sites overlap, meaning that they exist in both years, but there are considerably more 2022 sites (red) than 2002 sites (blue). The "hotspots" appear to be Southern California, the Bay Area, and the Sacramento Area, while Northern California and Mojave are sparsely populated with sites. This makes sense given that the former locations are densely populated and the latter are not.
 
 # Step 4
 
@@ -144,12 +142,81 @@ State_Data <- Summary_Data[
 
 by(State_Data$PM2.5, State_Data$Year, summary)
 
-boxplot(PM2.5 ~ Year, data = State_Data)
+boxplot(PM2.5 ~ Year, data = State_Data, main = "PM 2.5 Concentrations in California: 2002 vs. 2022", ylab = "Mean PM 2.5 Concentration (micrograns per cubic meter)")
 
 PM2.5_2002 <- State_Data$PM2.5[State_Data$Year == 2002]
 PM2.5_2022 <- State_Data$PM2.5[State_Data$Year == 2022]
-hist(PM2.5_2002)
-hist(PM2.5_2022)
+hist(PM2.5_2002, main = "Distribution of Daily Mean PM 2.5 Concentration (2002)",
+     xlab = "Daily Mean PM 2.5 Concentration (micrograms per cubic meter)")
+hist(PM2.5_2022, main = "Distribution of Daily Mean PM 2.5 Concentration )2022)", xlab = "Daily Mean PM 2.5 Concentration (micrograms per cubic meter)")
+
+Year2002 <- 2002
+Year2022 <- 2022
+
+State_Data <- subset(State_Data, Year %in% c(Year2002, Year2022) & !is.na(State_Data$PM2.5))
+
+State_Means <- aggregate(PM2.5 ~ Year, data = State_Data, FUN = mean)
+
+Mean_2002 <- State_Means$PM2.5[State_Means$Year == Year2002]
+Mean_2022 <- State_Means$PM2.5[State_Means$Year == Year2022]
+
+plot(
+  NA,
+  xlim = range(c(Mean_2002, Mean_2022)),
+  ylim = c(0.5, 1.5),
+  yaxt = "n",
+  xlab = "Mean PM 2.5 Concentration",
+  ylab = "California",
+  main = paste("Change in State Mean PM 2.5 from 2002 to 2022")
+)
+
+segments(
+  x0 = Mean_2002,
+  y0 = 1,
+  x1 = Mean_2022,
+  y1 = 1,
+  col = "gray",
+  lwd = 3
+)
+
+points(
+  Mean_2002,
+  1,
+  pch = 19,
+  col = "blue",
+  cex = 2
+)
+
+points(
+  Mean_2022,
+  1,
+  pch = 19,
+  col = "red",
+  cex = 2
+)
+
+text(
+  Mean_2002,
+  1.1,
+  labels = round(Mean_2002, 2),
+  col = "blue"
+)
+
+text(
+  Mean_2022,
+  1.1,
+  labels = round(Mean_2022, 2),
+  col = "red"
+)
+
+legend(
+  "topright",
+  legend = c(Year2002, Year2022),
+  col = c("blue", "red"),
+  pch = 19,
+  pt.cex = 1.5,
+  bty = "n"
+)
 ```
 
 ### Summary
