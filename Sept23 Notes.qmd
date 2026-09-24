@@ -1,0 +1,270 @@
+---
+title: "9/23 Slides"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+```{r}
+library(data.table)
+library(dtplyr)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r}
+# Where are we getting the data from
+met_url <- "https://github.com/USCbiostats/data-science-data/raw/master/02_met/met_all.gz"
+
+# Downloading the data to a tempfile (so it is destroyed afterwards)
+# you can replace this with, for example, your own data:
+tmp <- tempfile(pattern = "met", fileext = ".gz")
+# tmp <- "met.gz"
+
+# We should be downloading this, ONLY IF this was not downloaded already.
+# otherwise is just a waste of time.
+if (!file.exists(tmp)) {
+  download.file(
+    url      = met_url,
+    destfile = tmp,
+    # method   = "libcurl", timeout = 1000 (you may need this option)
+  )
+}
+```
+
+```{r}
+dat <- read.csv(tmp)
+head(dat)
+```
+```{r}
+# Selecting columns (method 1)
+head(dat[,c('USAFID','lat','lon')])
+
+#select one column
+dat$month
+
+#Using dplyr::select verb to select columns (method 2)
+#pipe dat into select function, then pipe that into head
+dat |> select(USAFID, lat, lon) |> head()
+
+# select only the relevant variables
+dat <- dat |> select(USAFID, WBAN, year, month, day, 
+         hour, min, lat, lon, elev, 
+         wind.sp, temp, atm.press)
+```
+
+# Data filtering: Logical Conditions
+Based on logical operations: condition 1 and/or condition 2 and/or ...
+Need to be aware of ordering and grouping of and and or operators
+
+Fundamental relational operators: <,>, <=, >=, ==, !=
+
+# How many ways can you write a Xor operator?
+
+```{r}
+myxor <- function(x, y) {
+  res <- logical(length(x))
+  for (i in 1:length(x)) {
+    res[i]  # do something with x[i] and y[i]
+  }
+  return(res)
+}
+
+myxor1 <- function(x,y) {(x & !y) | (!x & y)}
+myxor2 <- function(x,y) {!((!x | y) & (x | !y))}
+myxor3 <- function(x,y) {(x | y) & (!x | !y)}
+myxor4 <- function(x,y) {!((!x & !y) | (x & y))}
+cbind(
+  ifelse(xor(test[,1], test[,2]), "true", "false"),
+  ifelse(myxor1(test[,1], test[,2]), "true", "false"),
+  ifelse(myxor2(test[,1], test[,2]), "true", "false"),
+  ifelse(myxor3(test[,1], test[,2]), "true", "false"),
+  ifelse(myxor4(test[,1], test[,2]), "true", "false")
+)
+```
+
+# Filtering (Subsetting) the data
+Say we need to select records according to some criteria. For example:
+
+First day of the month, and
+Above latitude 40, and
+Elevation outside the range 500 and 1,000.
+
+he logical expressions would be
+
+(day == 1)
+(lat > 40)
+((elev < 500) | (elev > 1000))
+
+```{r}
+#base r method
+tmp <- dat[dat$day == 1 &
+             dat$lat > 40 &
+             (dat$elev < 500 | dat$elev > 1000), ]
+head(tmp)
+
+#dplyr::filter() method
+dat |>
+  filter(day == 1, lat > 40, (elev < 500) | (elev > 1000)) |>
+  head() 
+```
+
+1. How many records have a tempertaure within 18 and 25?
+2. Slme records hav missing values, count how mnay have temp or NA
+3. Plot a sample of 1,000 pairs (lat,lon) coordinates for (a) the stations with temp as NA and (b) those with data
+
+```{r}
+# Question 1
+nrow(dat[dat$temp < 25 & dat$temp > 18, ])
+# dat[temp %between% c(18, 25), .N] 
+# dat |> filter(between(temp, 18, 25)) |> nrow()
+
+# Question 2
+nrow(dat[is.na(dat$temp), ])
+# more succinct: sum(is.na(dat$temp))
+
+# Question 3
+# Drawing a sample
+set.seed(123)
+idx1 <- sample(which(is.na(dat$temp)), 1000)
+idx2 <- sample(which(!is.na(dat$temp)), 1000)
+
+# Visualizing the data
+# make a map of the US, as we did last class
+ggplot(map_data("state"), aes(x = long, y = lat)) +
+  geom_map(aes(map_id = region), map = map_data("state"), col = "lightgrey", fill = "gray") +
+  geom_jitter(
+    data    = dat[c(idx1, idx2), ],
+    mapping = aes(x = lon, y = lat, col = is.na(temp)),
+    inherit.aes = FALSE, alpha = .5, cex = 2
+    )
+```
+
+# Creating Variables: Data Types
+Logical: bool true/false type
+Strings: string of characters
+Integer: numeric variable without decimal (discrete)
+Double: numeric variable with decimals (continuous)
+
+# Creating Variables: Special Data Types
+Time: could be date, date + time, or a combination
+Categorical: represent strata/levels of variables
+Ordinal: similar to facor, but has ordering
+
+# Variable Creation
+Want to creat two variables, elev^2 and scaled version of wind.sp by standard deviation
+```{r}
+dat$elev2 <- dat$elev^2
+dat$windsp_scaled <- dat$wind.sp / sd(dat$wind.sp, na.rm = TRUE)
+```
+
+#variable creation using dplyr::mutate()
+```{r}
+dat |>
+  mutate(
+    elev2         = elev ^ 2,
+    windsp_scaled = wind.sp / sd(wind.sp,na.rm=TRUE)
+  ) |>
+  head()
+```
+
+# Want to scale multiple variables by their SD but didn't want to copy-paste the code several times
+```{r}
+# Listing the names
+names  <- c("wind.sp", "temp", "atm.press")
+
+for(var in names){
+  dat[,paste0(var,'_scaled')] <- dat[,var] / sd(dat[,var], na.rm = TRUE)
+}
+
+#Using dplyr
+names  <- c("wind.sp", "temp", "atm.press")
+dat |>
+  mutate(
+    across(
+      all_of(names),
+      function(x) x/sd(x, na.rm = TRUE),
+      .names = "{col}_scaled2"
+      )
+  ) |>
+  # Just to print the last columns
+  select(ends_with("_scaled2")) |>
+  head(n = 4)
+```
+
+# Complex Variable Creation
+
+for loops and sapply may be slow but are handy for creating variables that rely on complicated relationships between variables
+
+Complex variable: wind.temp - will take on 4 different values based on temperature and wind speed: cool & still, cool & windy, warm & still, warm & windy. SPlit each variable based on median value.
+
+Will run slow and not be added as a variable to the dataset
+```{r}
+# create the new variable one entry at a time
+wind.temp <- sapply(1:nrow(dat), function(i){
+  if(is.na(dat$temp[i]) | is.na(dat$wind.sp[i])){
+    return(NA)
+  }
+  if(dat$temp[i] <= median(dat$temp, na.rm=TRUE)){
+    if(dat$wind.sp[i] <= median(dat$wind.sp, na.rm=TRUE)){
+      return('cool & still')
+    }else{
+      return('cool & windy')
+    }
+  }else{
+    if(dat$wind.sp[i] <= median(dat$wind.sp, na.rm=TRUE)){
+      return('warm & still')
+    }else{
+      return('warm & windy')
+    }
+  }
+})
+```
+
+For Loop Code (no sapply), unlike sapply, an empty vector must be made first and then filled in with the values.
+```{r}
+# initialize a variable of all missing values
+wind.temp <- rep(NA, nrow(dat))
+# fill in the values one at a time
+for(i in 1:nrow(dat)){
+  if(is.na(dat$temp[i]) | is.na(dat$wind.sp[i])){
+    return(NA)
+  }else{
+    if(dat$temp[i] <= median(dat$temp, na.rm=TRUE)){
+      if(dat$wind.sp[i] <= median(dat$wind.sp, na.rm=TRUE)){
+        wind.temp[i] <- 'cool & still'
+      }else{
+        wind.temp[i] <- 'cool & windy'
+      }
+    }else{
+      if(dat$wind.sp[i] <= median(dat$wind.sp, na.rm=TRUE)){
+        wind.temp[i] <- 'warm & still'
+      }else{
+        wind.temp[i] <- 'warm & windy'
+      }
+    }
+  }
+}
+```
+
+Vectorized approach that will run on a large datset. 
+```{r}
+# initialize a variable of all missing values
+wind.temp <- rep(NA, nrow(dat))
+# assign every possible value by subsetting
+wind.temp[dat$temp <= median(dat$temp, na.rm=TRUE) & 
+            dat$wind.sp <= median(dat$wind.sp, na.rm=TRUE)] <- 'cool & still'
+wind.temp[dat$temp <= median(dat$temp, na.rm=TRUE) & 
+            dat$wind.sp > median(dat$wind.sp, na.rm=TRUE)] <- 'cool & windy'
+wind.temp[dat$temp > median(dat$temp, na.rm=TRUE) & 
+            dat$wind.sp <= median(dat$wind.sp, na.rm=TRUE)] <- 'warm & still'
+wind.temp[dat$temp > median(dat$temp, na.rm=TRUE) & 
+            dat$wind.sp > median(dat$wind.sp, na.rm=TRUE)] <- 'warm & windy'
+
+head(wind.temp)
+```
+
+Merging Data
+While building the MET dataset, we dropped the state data. We can use the original stations dataset and merge it to the MET dataset. Cannot do it right away, we need to process the data first.
