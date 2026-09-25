@@ -268,3 +268,98 @@ head(wind.temp)
 
 Merging Data
 While building the MET dataset, we dropped the state data. We can use the original stations dataset and merge it to the MET dataset. Cannot do it right away, we need to process the data first.
+
+```{r}
+stations <- fread("https://noaa-isd-pds.s3.amazonaws.com/isd-history.csv")
+stations <- as.data.frame(stations)
+stations$USAF <- as.integer(stations$USAF)
+
+# Dealing with NAs and 999999
+stations$USAF[stations$USAF == 999999] <- NA
+stations$CTRY[stations$CTRY == ""] <- NA
+stations$STATE[stations$STATE == ""] <- NA
+
+# Selecting the three relevant columns, and keep unique records
+stations <- unique(stations[, c('USAF', 'CTRY', 'STATE')])
+
+# Dropping NAs
+stations <- stations[!is.na(stations$USAF), ]
+
+head(stations, n = 4)
+```
+```{r}
+merge(
+  # Data
+  x     = dat,      
+  y     = stations, 
+  # List of variables to match
+  by.x  = "USAFID",
+  by.y  = "USAF", 
+  # Which obs to keep?
+  all.x = TRUE,      
+  all.y = FALSE
+  ) |> nrow()
+#Adds more rows, the original dataset has 2377343, this means there is duplicated IDs. Fix it with:
+
+stations <- stations[!duplicated(stations$USAF), ]
+```
+
+```{r}
+dat <- merge(
+  # Data
+  x     = dat,      
+  y     = stations, 
+  # List of variables to match
+  by.x  = "USAFID",
+  by.y  = "USAF", 
+  # Which obs to keep?
+  all.x = TRUE,      
+  all.y = FALSE
+  )
+
+head(dat[, c('USAFID', 'WBAN', 'STATE')], n = 4)
+```
+
+# Aggregating Data: Adding grouped variables
+```{r}
+dat <- dat |>
+  group_by(STATE, year, month, day) |>
+  mutate(
+    temp_imp = coalesce(temp, mean(temp, na.rm = TRUE))
+    )
+
+# Preparing for plotting
+# select single station, sort by date
+plotdata <- dat[dat$USAFID == 720172, ]
+plotdata <- plotdata[order(plotdata$year, plotdata$month, plotdata$day, plotdata$hour, plotdata$min), ]
+# Generate an 'x' variable for time
+plotdata$id <- 1:nrow(plotdata)
+
+
+plot(plotdata$id, plotdata$temp, pch=16)
+lines(plotdata$id, plotdata$temp_imp, col=2)
+
+plotdata |>
+  ggplot(aes(x = id)) +
+  geom_point(aes(y = temp)) +
+  geom_line(aes(y = temp_imp, colour = 'red'))
+
+head(dat)
+
+dat <- ungroup(dat)
+head(dat)
+```
+
+# Aggregate dat: Summary Table
+```{r}
+dat |> 
+  group_by(STATE) |>
+  summarise(
+    temp_avg      = mean(temp, na.rm=TRUE),
+    wind.sp_avg   = mean(wind.sp, na.rm=TRUE),
+    atm.press_avg = mean(atm.press, na.rm = TRUE)
+  ) |> 
+  arrange(STATE) |> 
+  head(n = 4)
+```
+
