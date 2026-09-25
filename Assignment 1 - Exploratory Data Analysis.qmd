@@ -209,8 +209,6 @@ points(County_Comparison$Mean_2002, plot_positions, pch = 19, col = "blue")
 points(County_Comparison$Mean_2022, plot_positions, pch = 19, col = "red")
 
 legend( "topright", legend = c("2002", "2022"), col = c("blue", "red"), pch = 19, bty = "n")
-
-par(mar = c(5, 4, 4, 2) + 0.1)
 ```
 
 ## Summary
@@ -265,8 +263,6 @@ points(Site_Comparison$Mean_2002, positions, pch = 19, col = "blue", cex = 1.2)
 points(Site_Comparison$Mean_2022, positions, pch = 19, col = "red", cex = 1.2)
 
 legend("topright", legend = c("2002", "2022"), col = c("blue", "red"), pch = 19, bty = "n")
-
-par(mar = c(5, 4, 4, 2) + 0.1)
 ```
 
 ## Summary
