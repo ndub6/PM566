@@ -7,20 +7,15 @@ embed-resources: true
 ---
 
 # Setup
+
 ```{r}
 library(data.table)
 library(dtplyr)
 library(dplyr)
 
 # Read met
-if (!file.exists("met_all.gz"))
-  download.file(
-    url = "https://raw.githubusercontent.com/USCbiostats/data-science-data/master/02_met/met_all.gz",
-    destfile = "met_all.gz",
-    method   = "libcurl",
-    timeout  = 60
-    )
-met <- read.csv("met_all.gz")
+met <- read.csv("C:/Users/nweit/Downloads/met_all.gz")
+met$USAFID <- as.integer(met$USAFID)
 
 met <- met[met$temp > -17, ]
 
@@ -58,17 +53,33 @@ head(dat[, c('USAFID', 'WBAN', 'STATE')], n = 4)
 ```
 
 # Question 1: Representative station for the US
+
 What is the median station in terms of temperature, wind speed, and atmospheric pressure? Look for the three weather stations that best represent continental US using the quantile() function. Do these three coincide?
 
 ```{r}
-dat |> 
+dat2 <- dat |>
   group_by(USAFID) |>
-  summarise(
-    temp_med      = median(temp, na.rm=TRUE),
-    wind.sp_med  = median(wind.sp, na.rm=TRUE),
-    atm.press_med = median(atm.press, na.rm = TRUE)
-  ) |> 
-  arrange(USAFID) |> 
-  head(n = 4)
-```
+  summarize(Median_Temp = median(temp, na.rm = TRUE),
+            Median_Wind.Speed = median(wind.sp, na.rm = TRUE), Median_Atmospheric.Pressure = median(atm.press, na.rm = TRUE)) |>
+  arrange (USAFID) |>
+  filter(!is.na(Median_Temp), !is.na(Median_Wind.Speed), !is.na(Median_Atmospheric.Pressure))
 
+Stations_Medians <- dat2 |>
+  summarize(
+    Median_Temp = quantile(Median_Temp, 0.50, na.rm = TRUE),
+    Median_Wind.Speed = quantile(Median_Wind.Speed, 0.50, na.rm = TRUE), Median_Atmospheric.Pressure = quantile(Median_Atmospheric.Pressure, 0.50, na.rm = TRUE))
+
+Stations_Medians
+
+Temperature_Station <-dat2[which.min(abs(dat2$Median_Temp - Stations_Medians["Median_Temp"]))]
+Wind.Speed_Station <-dat2[which.min(abs(dat2$Median_Wind.Speed - Stations_Medians["Median_Wind.Speed"]))]
+Atmospheric.Pressure_Station <-dat2[which.min(abs(dat2$Median_Atmospheric.Pressure - Stations_Medians["Median_Atmospheric.Pressure"]))]
+
+Stations_Medians <- data.frame(
+  Variable = c("Temperature", "Wind speed", "Atmospheric pressure"),
+  USAFID = c(Temperature_Station$USAFID, Wind.Speed_Station$USAFID, Atmospheric.Pressure_Station$USAFID),
+  Stations_Medians = c(Temperature_Station$Median_Temp, Wind.Speed_Station$Median_Wind.Speed, Atmospheric.Pressure_Station$Median_Atmospheric.Pressure))
+
+Stations_Medians
+
+```
