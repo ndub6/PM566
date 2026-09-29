@@ -116,7 +116,7 @@ State_Coordinates <- dat3 |>
   group_by(STATE) |>
   summarize(Mean_Latitude = mean(Latitude, na.rm = TRUE), Mean_Longitude = mean(Longitude, na.rm = TRUE))
 
-Mean_Stations <- Stations_Locations |>
+Mean_Stations <- dat3 |>
   left_join(State_Coordinates |>
   select(STATE, Mean_Latitude, Mean_Longitude), by = "STATE") |>
   mutate(Distance_from_Mean = sqrt((Latitude - Mean_Latitude)^2 + (Longitude - Mean_Longitude)^2)) |> 
