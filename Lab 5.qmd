@@ -132,21 +132,14 @@ ggplot(map_data("state"), aes(x = long, y = lat)) +
   theme(legend.position = "bottom")
 
 ```
+
 # Question 4: Means of Means
+
 Compute each state’s average temperature and use that to classify them according to the following criteria:
 
-low: temp < 20
-Mid: temp >= 20 and temp < 25
-High: temp >= 25
-Now generate a large summary table with states/observations split into the three categories listed above. For each group, compute the following:
+low: temp \< 20 Mid: temp \>= 20 and temp \< 25 High: temp \>= 25 Now generate a large summary table with states/observations split into the three categories listed above. For each group, compute the following:
 
-Number of states
-Number of entries (records)
-Number of NA entries
-Number of stations
-Mean temperature
-Mean wind-speed
-Mean atmospheric pressure
+Number of states Number of entries (records) Number of NA entries Number of stations Mean temperature Mean wind-speed Mean atmospheric pressure
 
 ```{r}
 Average_Temperature_Categorized <- dat |>
@@ -161,4 +154,3 @@ Summary <- Average_Temperature_Categorized |>
 
 Summary
 ```
-
