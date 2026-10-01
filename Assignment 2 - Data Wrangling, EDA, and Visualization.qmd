@@ -1,0 +1,41 @@
+---
+title: "Assignment 2"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+```{r}
+library(nycflights13)
+airlines <- airlines
+airports <- airports
+flights <- flights
+planes <- planes
+weather <- weather
+```
+
+# Question 1
+Find the top 10 most popular destinations in the flights data. How many flights went to each?
+
+```{r}
+Top10Flights <- sort(table(flights$dest), decreasing = TRUE)
+
+Top10Flights <- head(Top10Flights, 10)
+
+Top10Flights
+```
+## Summary
+The 10 most popular destinations in the flights data, in order from most to least popular and with the number of flights that went to each in parantheses, are: ORD (17,283), ATL (17,215), LAX (16,174), BOS (15,508), MCO (14082), CLT (14,064), SFO (13,331), FLL (12,055), MIA (11,728), and DCA (9705).
+
+# Question 2
+Create two new categorical variables in flights based on the departure time (dep_time), and arrival time (arr_time). These new variables should have four categories: “early morning” for 12am to 6am, “morning” for 6am to 12pm, “afternoon” for 12pm to 6pm, and “evening” for 6pm to 12am. Show barplots of both of these new variables. What percentage of flights were “red eye” flights? We’ll define these as flights that depart in “afternoon” or “evening” and arrive in “early morning” or “morning.”
+
+```{r}
+flights$dep_time_category <- ifelse(is.na(flights$dep_time), NA, ifelse(flights$dep_time < 600, "Early Morning", ifelse(flights$dep_time < 1200, "Morning", ifelse(flights$dep_time < 1800, "Afternoon", "Evening"))))
+
+flights$arr_time_category <- ifelse(is.na(flights$arr_time), NA, ifelse(flights$arr_time))
+
+barplot(flights$dep_time_category)
+```
+
