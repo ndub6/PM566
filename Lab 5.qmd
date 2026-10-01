@@ -64,22 +64,93 @@ dat2 <- dat |>
   arrange (USAFID) |>
   filter(!is.na(Median_Temp), !is.na(Median_Wind.Speed), !is.na(Median_Atmospheric.Pressure))
 
-Stations_Medians <- dat2 |>
+National_Median <- dat2 |>
   summarize(
     Median_Temp = quantile(Median_Temp, 0.50, na.rm = TRUE),
     Median_Wind.Speed = quantile(Median_Wind.Speed, 0.50, na.rm = TRUE), Median_Atmospheric.Pressure = quantile(Median_Atmospheric.Pressure, 0.50, na.rm = TRUE))
 
-Stations_Medians
+National_Median
 
-Temperature_Station <-dat2[which.min(abs(dat2$Median_Temp - Stations_Medians["Median_Temp"]))]
-Wind.Speed_Station <-dat2[which.min(abs(dat2$Median_Wind.Speed - Stations_Medians["Median_Wind.Speed"]))]
-Atmospheric.Pressure_Station <-dat2[which.min(abs(dat2$Median_Atmospheric.Pressure - Stations_Medians["Median_Atmospheric.Pressure"]))]
+Temperature_Station <-dat2 |>
+  slice_min(abs(dat2$Median_Temp - National_Median$Median_Temp), n = 1, with_ties = FALSE)
+Wind.Speed_Station <-dat2 |>
+  slice_min(abs(dat2$Median_Wind.Speed - National_Median$Median_Wind.Speed), n = 1, with_ties = FALSE)
+Atmospheric.Pressure_Station <-dat2|>
+  slice_min(abs(dat2$Median_Atmospheric.Pressure - National_Median$Median_Atmospheric.Pressure), n = 1, with_ties = FALSE)
 
-Stations_Medians <- data.frame(
-  Variable = c("Temperature", "Wind speed", "Atmospheric pressure"),
-  USAFID = c(Temperature_Station$USAFID, Wind.Speed_Station$USAFID, Atmospheric.Pressure_Station$USAFID),
-  Stations_Medians = c(Temperature_Station$Median_Temp, Wind.Speed_Station$Median_Wind.Speed, Atmospheric.Pressure_Station$Median_Atmospheric.Pressure))
+National_Median_Stations <- data.frame(Variable = c("Temperature", "Wind Speed", "Atmospheric Pressure"), USAFID = c(Temperature_Station$USAFID, Wind.Speed_Station$USAFID, Atmospheric.Pressure_Station$USAFID), National_Median = c(National_Median$Median_Temp, National_Median$Median_Wind.Speed, National_Median$Median_Atmospheric.Pressure))
 
-Stations_Medians
+National_Median_Stations
+```
 
+## Summary
+
+The median station for temperature was station 720306, the median station for wind speed was station 720369, and the median station for atmospheric pressure was station 720394. The three stations do not coincide.
+
+# Question 2: Representative Station per State
+
+As in the previous question, calculate the median latitude and longitude for stations in each state.
+
+```{r}
+dat3 <- dat |>
+  group_by(STATE, USAFID) |>
+  summarize(Latitude = median(lat, na.rm = TRUE), Longitude = median(lon, na.rm = TRUE))|> filter(!is.na(STATE), !is.na(USAFID), !is.na(Latitude), !is.na(Longitude))
+
+State_Medians <- dat3 |>
+  group_by(STATE) |>
+  summarize(Median_Latitude = quantile(Latitude, probs = 0.50, na.rm = TRUE), Median_Longitude = quantile(Longitude, probs = 0.50, na.rm = TRUE))
+
+State_Medians
+
+
+```
+
+# Question 3: In the middle?
+
+For each state, identify the station that is closest to the mean latitude and longitude for stations in that state. Combining these with the coordinates you identified in the previous question, use leaflet() to visualize all \~100 points in the same figure, applying different colors for those identified in this question.
+
+```{r}
+library(ggplot2)
+
+State_Coordinates <- dat3 |>
+  group_by(STATE) |>
+  summarize(Mean_Latitude = mean(Latitude, na.rm = TRUE), Mean_Longitude = mean(Longitude, na.rm = TRUE))
+
+Mean_Stations <- dat3 |>
+  left_join(State_Coordinates |>
+  select(STATE, Mean_Latitude, Mean_Longitude), by = "STATE") |>
+  mutate(Distance_from_Mean = sqrt((Latitude - Mean_Latitude)^2 + (Longitude - Mean_Longitude)^2)) |> 
+  group_by(STATE) |>
+  slice_min(Distance_from_Mean, n=1, with_ties = FALSE)
+
+ggplot(map_data("state"), aes(x = long, y = lat)) +
+  geom_map(aes(map_id= region), map = map_data("state"), col = "black", fill = "gray") +
+  geom_point(data = Mean_Stations, mapping = aes(x = Longitude, y = Latitude, colour = "Station Closest to State Mean"), size = 2.5, alpha = 0.85) +
+  geom_point(data = State_Coordinates, mapping = aes(x = Mean_Longitude, y = Mean_Latitude, colour = "State Mean"),  size = 2.5, alpha = 0.85) +
+  scale_color_manual(name = "Point Type", values = c("Station Closest to State Mean" = "red", "State Mean" = "blue")) +
+  labs(y  = "Latitude", x = "Longitude") +
+  theme(legend.position = "bottom")
+
+```
+
+# Question 4: Means of Means
+
+Compute each state’s average temperature and use that to classify them according to the following criteria:
+
+low: temp \< 20 Mid: temp \>= 20 and temp \< 25 High: temp \>= 25 Now generate a large summary table with states/observations split into the three categories listed above. For each group, compute the following:
+
+Number of states Number of entries (records) Number of NA entries Number of stations Mean temperature Mean wind-speed Mean atmospheric pressure
+
+```{r}
+Average_Temperature_Categorized <- dat |>
+  group_by(STATE) |>
+  mutate(Average_Temp_State = mean(temp, na.rm= TRUE), 
+  Temperature_Category = ifelse(Average_Temp_State < 20, "Low", ifelse(Average_Temp_State < 25, "Mid", "High")))
+  
+Summary <- Average_Temperature_Categorized |>
+  filter(!is.na(Temperature_Category)) |>
+  group_by(Temperature_Category) |>
+  summarize(Number_of_States = n_distinct(STATE), Number_of_Entries = n(), Number_of_NA_Entries = sum(is.na(temp)), Number_of_Stations = n_distinct(USAFID, na.rm = TRUE), Mean_Temperature = mean(temp, na.rm = TRUE), Mean_Wind_Speed = mean(wind.sp, na.rm = TRUE), Mean_Atmospheric_Pressure = mean(atm.press, na.rm = TRUE))
+
+Summary
 ```
