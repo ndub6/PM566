@@ -31,7 +31,7 @@ mt_samples |>
 ```
 
 ## Summary
-THere are 40 categories/medical specialties in the data. There doesn't seem to be any overalp and the categories are not evenly distributed. 
+There are 40 categories/medical specialties in the data. There is some overlap, as viewing mt_samples and sorting by the description or transcription columns will reveal that some reports are listed under two or more medical specialties. The data does not seem to be evenly distributed, as some specialties, like "Speech - Language," have less than 10 reports and other specialties have hundreds of reports.
 
 # Question 2
 Tokenize the the words in the transcription column
@@ -144,4 +144,4 @@ mt_samples |>
 ```
 
 ## Summary
-From what I see, "patient" or "patients" seem to be the most common way these articles/descriptions refer to people, which makes sense given the graph in Question 3. By just combing the table, there aren't really any other words that stand out to me, as most have less than 10 counts. However, I do notice that some specialties use a variety of words, like "Chiropractic" and "Psychiatry/Psychology," while some specialties only use "patient" or "patients," like "ENT -Otolaryngology" and "Urology." If I were to expand the list of "people_terms" to include more words that could describe people, then maybe there would be more variation in the words used. 
+From what I see, "patient" or "patients" seem to be the most common way these articles/descriptions refer to people, which makes sense given the graph in Question 3. By just combing the table, there aren't really any other words that stand out to me, as most have less than 10 counts. However, I do notice that some specialties use a variety of words, like "Chiropractic" and "Psychiatry/Psychology," while some specialties only use "patient" or "patients," like "ENT -Otolaryngology" and "Urology." If I were to expand the list of "people_terms" to include more words that could describe people, then there could be more variation in the words used.
