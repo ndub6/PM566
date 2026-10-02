@@ -1,0 +1,22 @@
+---
+title: "Tidy Tuesday 9/30"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+```{r}
+health <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2026/2026-09-29/health.csv')
+```
+
+Do urban centres that belong to a higher income group have a higher density of hospitals compared to those in a lower income group?
+
+```{r}
+boxplot(health$HL_SHP_HOS_2025 ~ health$GC_DEV_WIG_2025, las = 2, xlab='')
+
+layout(matrix(1:4, nrow=2))
+xl <- range(health$HL_SHP_HOS_2025, na.rm = TRUE)
+for(inc in unique(health$GC_DEV_WIG_2025))if(!is.na(inc)){ hist(health$HL_SHP_HOS_2025[health$GC_DEV_WIG_2025 == inc], main = inc)}
+```
+
