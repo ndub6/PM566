@@ -28,16 +28,18 @@ Use the count() function from dplyr to figure out how many different categories 
 ```{r}
 mt_samples |>
   count(medical_specialty, sort = TRUE)
+
+mt_samples |>
+  arrange(description)
 ```
 
 ## Summary
-There are 40 categories/medical specialties in the data. There is some overlap, as viewing mt_samples and sorting by the description or transcription columns will reveal that some reports are listed under two or more medical specialties. The data does not seem to be evenly distributed, as some specialties, like "Speech - Language," have less than 10 reports and other specialties have hundreds of reports.
+
+There are 40 categories/medical specialties in the data. There is some overlap, as viewing mt_samples and arranging by the description column will reveal that some reports are listed under two or more medical specialties. The data does not seem to be evenly distributed, as some specialties, like "Speech - Language," have less than 10 reports and other specialties have hundreds of reports.
 
 # Question 2
-Tokenize the the words in the transcription column
-Count the number of times each token appears
-Visualize the top 20 most frequent words
-Explain what we see from this result. Does it makes sense? What insights (if any) do we get?
+
+Tokenize the the words in the transcription column. Count the number of times each token appears. Visualize the top 20 most frequent words. Explain what we see from this result. Does it makes sense? What insights (if any) do we get?
 
 ```{r}
 mt_samples |>
@@ -48,12 +50,12 @@ mt_samples |>
 ```
 
 ## Summary
-Based on the list, the top 20 most frequent words are stop words and "patient." This makes sense given stop words are common words and "patient" would be a common word given the context of the data. Because these are stop words, they do not give much context/insights, they actually carry little to no meaning at all.
+
+Based on the list, the top 20 most frequent words are stop words and "patient." This makes sense given stop words are commonly used words and "patient" would be a common word given the context of the data. Because these are stop words, they do not give much context/insights into the data.
 
 # Question 3
-Re-do the visualization but remove stop words before making it
-Bonus points if you remove numbers as well
-What do we see know that we have removed stop words? Does it give us a better idea of what the text is about?
+
+Re-do the visualization but remove stop words before making it. Bonus points if you remove numbers as well. What do we see now that we have removed stop words? Does it give us a better idea of what the text is about?
 
 ```{r}
 mt_samples |>
@@ -63,14 +65,16 @@ mt_samples |>
   count(token, sort=TRUE) |>
   top_n(20,n) |>
   ggplot(aes(n, fct_reorder(token,n))) + geom_col ()
-
 ```
 
 ## Summary
-This list provides more context and reveals more "medical" terms, such as "procedure" and "diagnosis." This list makes more sense given the context of the data and appears to not have any leftover stopwords.
+
+This list provides more context and reveals more "medical" terms, such as "procedure" and "diagnosis." This list makes more sense given the context of the data and appears to not have any leftover stop words.
 
 # Question 4
+
 Repeat question 2, but this time tokenize into bi-grams. How does the result change if you look at tri-grams?
+
 ```{r}
 mt_samples |>
   unnest_ngrams(ngram, transcription, n=2) |>
@@ -86,9 +90,11 @@ mt_samples |>
 ```
 
 ## Summary
-Tokenizing the data into bi-grams gives a list of mainly combined stopwords, for example, "of the" and "with a." Tokenizing the data into tri-grams gives a list that provides more context about the data, for example, "the operating room" and "past medical history." There is also a three-way tie for the 20th spot on the list, which is why there are 22 results rather than just 20. 
+
+Tokenizing the data into bi-grams gives a list of mainly combined stop words, for example, "of the" and "with a." Tokenizing the data into tri-grams gives a list that provides more context about the data, for example, "the operating room" and "past medical history," however, stop words combinations still appear. There is also a three-way tie for the 20th spot on the list, which is why there are 22 results rather than just 20.
 
 # Question 5
+
 Using the results you got from Question 4, pick a word and count the words that appear before and after it.
 
 ```{r}
@@ -98,7 +104,8 @@ mt_samples |>
   separate(ngram, into = c("word1", "word2"), sep = " ") |>
   select(word1, word2) |>
   filter(word2 == "patient") |>
-  count(word1, sort= TRUE)
+  count(word1, sort= TRUE) |>
+  top_n(20, n)
 
 #Words that appear after "patient"
 mt_samples |>
@@ -106,13 +113,17 @@ mt_samples |>
   separate(ngram, into = c("word1", "word2"), sep = " ") |>
   select(word1, word2) |>
   filter(word1 == "patient") |>
-  count(word2, sort= TRUE)
+  count(word2, sort= TRUE) |>
+  top_n(20, n)
+
 ```
 
 ## Summary
-The first list represents the words that appear before "patient" and the second list represents the words that appear after "patient."
+
+The first list represents the top 20 most frequent words that appear before "patient" and the second list represents the top 20 most frequent words that appear after "patient."
 
 # Question 6
+
 Which words are most used in each of the specialties? You can use group_by() and top_n() from dplyr to have the calculations be done within each specialty. Remember to remove stop words. What are the 5 most-used words for each specialty?
 
 ```{r}
@@ -126,10 +137,12 @@ mt_samples |>
   arrange(medical_specialty, desc(n))
 ```
 
-## Summary 
-The top five most used words for each specialty are lsited in this table. Some lists contain ties, so that is why more than five words appear for some specialties and not others. 
+## Summary
+
+The top five most used words for each specialty are listed in this table. Some lists contain ties, so that is why more than five words appear for some specialties and not others.
 
 # Question 7
+
 I wanted to see how different specialties referred to participants/patients/subjects/people, as I believe that will show the nature of the article/description, providing even more context.
 
 ```{r}
@@ -144,4 +157,5 @@ mt_samples |>
 ```
 
 ## Summary
+
 From what I see, "patient" or "patients" seem to be the most common way these articles/descriptions refer to people, which makes sense given the graph in Question 3. By just combing the table, there aren't really any other words that stand out to me, as most have less than 10 counts. However, I do notice that some specialties use a variety of words, like "Chiropractic" and "Psychiatry/Psychology," while some specialties only use "patient" or "patients," like "ENT -Otolaryngology" and "Urology." If I were to expand the list of "people_terms" to include more words that could describe people, then there could be more variation in the words used.
