@@ -16,6 +16,7 @@ weather <- weather
 ```
 
 # Question 1
+
 Find the top 10 most popular destinations in the flights data. How many flights went to each?
 
 ```{r}
@@ -25,17 +26,80 @@ Top10Flights <- head(Top10Flights, 10)
 
 Top10Flights
 ```
+
 ## Summary
+
 The 10 most popular destinations in the flights data, in order from most to least popular and with the number of flights that went to each in parantheses, are: ORD (17,283), ATL (17,215), LAX (16,174), BOS (15,508), MCO (14082), CLT (14,064), SFO (13,331), FLL (12,055), MIA (11,728), and DCA (9705).
 
 # Question 2
+
 Create two new categorical variables in flights based on the departure time (dep_time), and arrival time (arr_time). These new variables should have four categories: “early morning” for 12am to 6am, “morning” for 6am to 12pm, “afternoon” for 12pm to 6pm, and “evening” for 6pm to 12am. Show barplots of both of these new variables. What percentage of flights were “red eye” flights? We’ll define these as flights that depart in “afternoon” or “evening” and arrive in “early morning” or “morning.”
 
 ```{r}
 flights$dep_time_category <- ifelse(is.na(flights$dep_time), NA, ifelse(flights$dep_time < 600, "Early Morning", ifelse(flights$dep_time < 1200, "Morning", ifelse(flights$dep_time < 1800, "Afternoon", "Evening"))))
 
-flights$arr_time_category <- ifelse(is.na(flights$arr_time), NA, ifelse(flights$arr_time))
+flights$arr_time_category <- ifelse(is.na(flights$arr_time), NA, ifelse(flights$arr_time < 600, "Early Morning", ifelse(flights$arr_time < 1200, "Morning", ifelse(flights$arr_time < 1800, "Afternoon", "Evening"))))
 
-barplot(flights$dep_time_category)
+Time_Labels <- c("Early Morning", "Morning", "Afternoon", "Evening")
+
+barplot(table(flights$dep_time_category), main = "Flights by Departure Time Category", xlab = "Departure Time", ylab = "Number of Flights", ylim = c(0, 160000))
+
+barplot(table(flights$arr_time_category), main = "Flights by Arrival Time Category", xlab = "Arrival Time", ylab = "Number of Flights", ylim = c(0, 160000))
+```
+```{r}
+# Percentage of Flights that were Red Eye Flights (Depart: Afternoon and Evening, Arrive: Early Morning and Morning)
+
+flights <- flights[!is.na(flights$dep_time) & !is.na(flights$arr_time),]
+flights$red_eye <- flights$dep_time_category %in% c("Afternoon", "Evening") & flights$arr_time_category %in% c("Early Morning", "Morning")
+
+RedEyePercentage <- mean(flights$red_eye, na.rm = TRUE) * 100
+
+RedEyePercentage
+
+RedEyeNumber <- table(flights$red_eye)
+
+RedEyePercentage2 <- data.frame(Red_Eye = names(RedEyeNumber), Amount = as.vector(RedEyeNumber), Percentage = as.vector(prop.table(RedEyeNumber)*100))
+
+RedEyePercentage2
+```
+
+## Summary
+
+About 3.24% of flights were Red Eye Flights. 
+
+# Question 3
+
+Were there any planes that flew for multiple airlines? If so, how many were there and which airlines did they fly for?
+
+```{r}
+Plane_Airlines_Carriers <- unique(flights[c("tailnum", "carrier")])
+Carriers_by_Tailnum <- split(Plane_Airlines_Carriers$carrier, Plane_Airlines_Carriers$tailnum)
+Carriers_by_Tailnum <- Carriers_by_Tailnum[sapply(Carriers_by_Tailnum, length) >1]
+as.data.frame(Carriers_by_Tailnum)
+```
+
+## Summary
+
+There were 17 planes that flew for multiple airlines. Planes N146PQ, N153PQ, N176PQ, N181PQ, N197PQ, N200PQ, N228PQ, and N232PQ flew for airlines 9E and EV. Planes N933AT, N935AT, N977AT, N978AT, N979AT, N981AT, N989AT, N990AT, and N994AT flew for airlines FL and DL. 
+
+# Question 4
+
+In the figure above, there is a missing relationship between weather and airports. What is the relationship and how should it appear in the diagram?
+
+```{r}
+weather
+airports
+```
+
+## Summary
+
+The missing relationship between weather and airports is the airport of origin from which the weather observation was made. In weather, the airport of origin is under the column "origin." In airports, the column "faa" refers to the FAA code of the airport. However, it appears that there are only three origins in weather, those being EWR, LGA, and JFK, while airports has 1,458 FAA codes. In the diagram, a connection should be made between weather "origin" and airports "faa."
+
+# Question 5
+
+In order to address our primary question, we want to prepare a tidy dataset (a single data frame). This will consist of information from the flights and weather data. The year, month, day, hour, and origin variables from weather provide almost enough information to give each observation a unique value. Create a new variable in the weather dataset by pasting together those 5 variables, then determine how many duplicated values there are and explain why (Hint: compare your new variable to the time_hour variable).
+
+```{r}
+weather$
 ```
 
