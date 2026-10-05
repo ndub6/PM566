@@ -7,6 +7,8 @@ embed-resources: true
 ---
 
 ```{r}
+library(dplyr)
+library(ggplot2)
 library(nycflights13)
 airlines <- airlines
 airports <- airports
@@ -97,6 +99,7 @@ The missing relationship between weather and airports is the airport of origin f
 
 # Question 5
 
+## Part 1
 In order to address our primary question, we want to prepare a tidy dataset (a single data frame). This will consist of information from the flights and weather data. The year, month, day, hour, and origin variables from weather provide almost enough information to give each observation a unique value. Create a new variable in the weather dataset by pasting together those 5 variables, then determine how many duplicated values there are and explain why (Hint: compare your new variable to the time_hour variable).
 
 ```{r}
@@ -107,6 +110,191 @@ sum(duplicated(weather$Unique_Weather))
 weather[duplicated(weather$Unique_Weather, fromLast = TRUE), c("time_hour", "Unique_Weather")]
 ```
 
-## Summary
+### Summary
 
-There are 3 duplicated values in the newly created "Unique_Weather" variable, occurring on November 3rd, 2013 at 1:00 AM at each airport. This is because this day was the end of Daylight Saving time, and clocks were moved back an hour, meaning that 1:00 AM was recorded twice. 
+There are 3 duplicated values in the newly created "Unique_Weather" variable, occurring on November 3rd, 2013 at 1:00 AM at each airport. This is because this day was the end of Daylight Saving time, and clocks were moved back an hour, so two observations of 1:00 AM were recorded at each airport. 
+
+## Part 2
+Now merge the flights data and the weather data so that each flight contains information about the weather at its departure airport at the time it was scheduled to take off. You’ll want to use the variables time_hour and origin in order to do this.
+
+```{r}
+Merged_Flights_Weather <- merge(flights, weather, by = c("time_hour", "origin"), all.x = TRUE)
+
+Merged_Flights_Weather <- subset(Merged_Flights_Weather, select = - c(year.y, month.y, day.y, hour.y))
+
+names(Merged_Flights_Weather)[names(Merged_Flights_Weather) == "year.x"] <- "year"
+names(Merged_Flights_Weather)[names(Merged_Flights_Weather) == "month.x"] <- "month"
+names(Merged_Flights_Weather)[names(Merged_Flights_Weather) == "day.x"] <- "day"
+names(Merged_Flights_Weather)[names(Merged_Flights_Weather) == "hour.x"] <- "hour"
+```
+
+# Question 6
+
+On this merged dataset, perform steps 2-5 of the EDA checklist presented in class. Remember the context provided by our primary question above.
+
+EDA Checklist: 2. Check the size of the data. 3. Examine the variables and their types. 4. Look at the top and bottom of the data. 5. Visualize the distributions of key variables. 
+
+```{r}
+# 2. Check the size of the data
+dim(Merged_Flights_Weather)
+nrow(Merged_Flights_Weather)
+ncol(Merged_Flights_Weather)
+
+# 3. Examine the variables and their types
+str(Merged_Flights_Weather)
+
+# 4. Look at the top and bottom of the data
+head(Merged_Flights_Weather)
+tail(Merged_Flights_Weather)
+
+# 5. Visualize the distributions of key variables
+barplot(table(Merged_Flights_Weather$origin), main = "Number of Flights by Origin Airport", xlab = "Origin Airport", ylab = "Number of Flights", ylim = c(0, 140000))
+mean(is.na(Merged_Flights_Weather$origin))
+
+hist(Merged_Flights_Weather$dep_delay, main = "Distribution of Departure Delays", xlab = "Departure Delay (minutes)", sub = "Negative Values Represent Earlier Depature")
+summary(Merged_Flights_Weather$dep_delay)
+mean(is.na(Merged_Flights_Weather$dep_delay))
+
+hist(Merged_Flights_Weather$arr_delay, main = "Distribution of Arrival Delays", xlab = "Arrival Delay (minutes)", sub = "Negative Values Represent Earlier Arrival")
+summary(Merged_Flights_Weather$arr_delay)
+mean(is.na(Merged_Flights_Weather$arr_delay))
+
+hist(Merged_Flights_Weather$temp, main = "Distribution of Temperatures at Origin Airports", xlab = "Temperature (Fahrenheit)")
+summary(Merged_Flights_Weather$temp)
+mean(is.na(Merged_Flights_Weather$temp))
+
+hist(Merged_Flights_Weather$dewp, main = "Distribution of Dewpoint at Origin Airports", xlab = "Dew Point (Fahrenheit)")
+summary(Merged_Flights_Weather$dewp)
+mean(is.na(Merged_Flights_Weather$dewp))
+
+hist(Merged_Flights_Weather$humid, main = "Distribution of Humidity at Origin Airports", xlab = 
+"Humidity")
+summary(Merged_Flights_Weather$humid)
+mean(is.na(Merged_Flights_Weather$humid))
+
+hist(Merged_Flights_Weather$wind_dir, main = "Distribution of Wind Direction at Origin Airports", xlab = "Wind Direction (degrees)")
+summary(Merged_Flights_Weather$wind_dir)
+mean(is.na(Merged_Flights_Weather$wind_dir))
+
+hist(Merged_Flights_Weather$wind_speed, main = "Distribution of Wind Speed at Origin Airports", xlab = "Wind Speed (mph)")
+summary(Merged_Flights_Weather$wind_speed)
+mean(is.na(Merged_Flights_Weather$wind_speed))
+
+hist(Merged_Flights_Weather$wind_gust, main = "Distribution of Wind Gust at Origin Airports", xlab = "Wind Gust (mph)")
+summary(Merged_Flights_Weather$wind_gust)
+mean(is.na(Merged_Flights_Weather$wind_gust))
+
+hist(Merged_Flights_Weather$precip, main = "Distribution of Precipitation at Origin Airports", xlab = "Precipitation (inches)")
+summary(Merged_Flights_Weather$precip)
+mean(is.na(Merged_Flights_Weather$precip))
+
+hist(Merged_Flights_Weather$pressure, main = "Distribution of Atmospheric Pressure at Origin Airports", xlab = "Atmospheric Pressure (millibars)")
+summary(Merged_Flights_Weather$pressure)
+mean(is.na(Merged_Flights_Weather$pressure))
+
+hist(Merged_Flights_Weather$visib, main = "Distribution of Visibility at Origin Airports", xlab = "Visibility (miles)")
+summary(Merged_Flights_Weather$visib)
+mean(is.na(Merged_Flights_Weather$visib))
+```
+
+## Summary
+There are 328,063 recordings (rows) and 32 variables (columns). The variables are mainly integer and numeric, but there is one logical variable and some character variables. In the context of the primary question, the key variables would be: dep_delay, arr_delay, temp, dewp, humid, wind_dir, wind_speed, wind_gust, precip, pressure, and visib. Measurements units were found using the data library for flights and weather data. The data was not cleaned in this step, so there are still some missing values. 
+
+# Question 7
+
+## Part 1
+
+Calculate the average departure delay for each day (Hint: think about which variables you need in order to do this!). Which day had the worst average length of delay for departures? 
+
+```{r}
+Daily_Delay <- Merged_Flights_Weather |>
+  group_by(year, month, day) |>
+  summarize(Average_Departure_Delay = mean(dep_delay, na.rm = TRUE), Amount_of_Flights = n()) |>
+  arrange(desc(Average_Departure_Delay))
+
+head(Daily_Delay)
+```
+
+### Summary
+
+March 8th, 2013 was the worst day, as it had an average departure delay of ~84 minutes. 
+
+## Part 2
+
+Now calculate the averages by day and origin. Which airport had the worst single day for delays and when was it? 
+
+```{r}
+Daily_Delay_Airport <- Merged_Flights_Weather |>
+  group_by(year, month, day, origin) |>
+  summarize (Average_Depatrue_Delay = mean(dep_delay, na.rm = TRUE), Amount_of_Flights = n()) |>
+  arrange(desc(Average_Depatrue_Delay))
+
+head(Daily_Delay_Airport)
+```
+
+
+### Summary
+
+LGA had the single worst day for delays on March 8th, 2013, with an average departure delay of ~106 minutes. 
+
+## Part 3
+
+Now calculate the averages by hour and origin. Which airport had the worst single hour for delays (and when was it)?
+
+```{r}
+Hourly_Delay_Airport <- Merged_Flights_Weather |>
+  group_by(time_hour, origin) |>
+  summarize(Average_Depature_Delay = mean(dep_delay, na.rm = TRUE), Amount_of_Flights = n()) |>
+  arrange(desc(Average_Depature_Delay))
+
+head(Hourly_Delay_Airport)
+```
+
+
+### Summary
+
+LGA had the worst single hour for delays on July 22nd, 2013 at 6 PM, with an average departure delay of ~310 minutes.
+
+# Question 8
+
+Compute the average arrival delay by destination, then add that information to the airports data frame. Make a map showing the spatial distribution of delays (you can make it however you like, but we recommend using either ggplot or leaflet). Use the color of the points to display the average delay for each airport.
+
+```{r}
+Arrival_Delay <- Merged_Flights_Weather |>
+  group_by(dest) |>
+  summarize(Average_Arrival_Delay = mean(arr_delay, na.rm = TRUE), Amount_of_Flights = sum(!is.na(arr_delay))) |>
+  filter(Amount_of_Flights > 0)
+
+airports <- airports |>
+  left_join(Arrival_Delay, by = c("faa" = "dest"))
+
+airports <- airports |>
+  filter(!is.na(Average_Arrival_Delay))
+
+US_Map <- map_data("state")
+ggplot() +
+  geom_polygon(data = US_Map, aes(x = long, y = lat, group = group), fill = "gray", color = "white") +
+  geom_point(data=airports,  aes(x = lon, y = lat, color = Average_Arrival_Delay)) + 
+  scale_color_gradient2(low = "darkblue", mid = "orange", high = "cyan", name = "Average Arrival Delay (Minutes)") +
+  labs(title = "Average Arrival Delay by Arrival Airport", x = "Longitude", y = "Latitude")
+```
+
+# Question 9
+
+Finally, create as many plots and summary statistics as needed to answer the primary question above.
+
+```{r}
+Visibility <- Merged_Flights_Weather |>
+  mutate(Visibility_Category = case_when(is.na(visib) ~ NA_character_, visib < 1 ~ "Low Visibility", visib >= 1 ~ "High Visibility"))
+
+Visibility_Airport <- Visibility |>
+  distinct(origin, time_hour, .keep_all = TRUE) |>
+  filter(!is.na(Visibility_Category)) |>
+  count(origin, Visibility_Category, name = "Number of Hours") |>
+  group_by(origin)
+
+Visibility_Airport <- Visibility_Airport |>
+  left_join(airports |> select(faa, lat, lon), by = c("origin"="faa"))
+```
+
+## Summary
