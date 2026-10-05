@@ -100,6 +100,13 @@ The missing relationship between weather and airports is the airport of origin f
 In order to address our primary question, we want to prepare a tidy dataset (a single data frame). This will consist of information from the flights and weather data. The year, month, day, hour, and origin variables from weather provide almost enough information to give each observation a unique value. Create a new variable in the weather dataset by pasting together those 5 variables, then determine how many duplicated values there are and explain why (Hint: compare your new variable to the time_hour variable).
 
 ```{r}
-weather$
+weather$Unique_Weather <- paste(weather$year, weather$month, weather$day, weather$hour, weather$origin)
+
+sum(duplicated(weather$Unique_Weather))
+
+weather[duplicated(weather$Unique_Weather, fromLast = TRUE), c("time_hour", "Unique_Weather")]
 ```
 
+## Summary
+
+There are 3 duplicated values in the newly created "Unique_Weather" variable, occurring on November 3rd, 2013 at 1:00 AM at each airport. This is because this day was the end of Daylight Saving time, and clocks were moved back an hour, meaning that 1:00 AM was recorded twice. 
