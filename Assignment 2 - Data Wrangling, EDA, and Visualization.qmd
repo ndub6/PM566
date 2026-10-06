@@ -172,10 +172,6 @@ hist(Merged_Flights_Weather$humid, main = "Distribution of Humidity at Origin Ai
 summary(Merged_Flights_Weather$humid)
 mean(is.na(Merged_Flights_Weather$humid))
 
-hist(Merged_Flights_Weather$wind_dir, main = "Distribution of Wind Direction at Origin Airports", xlab = "Wind Direction (degrees)")
-summary(Merged_Flights_Weather$wind_dir)
-mean(is.na(Merged_Flights_Weather$wind_dir))
-
 hist(Merged_Flights_Weather$wind_speed, main = "Distribution of Wind Speed at Origin Airports", xlab = "Wind Speed (mph)")
 summary(Merged_Flights_Weather$wind_speed)
 mean(is.na(Merged_Flights_Weather$wind_speed))
@@ -198,7 +194,7 @@ mean(is.na(Merged_Flights_Weather$visib))
 ```
 
 ## Summary
-There are 328,063 recordings (rows) and 32 variables (columns). The variables are mainly integer and numeric, but there is one logical variable and some character variables. In the context of the primary question, the key variables would be: dep_delay, arr_delay, temp, dewp, humid, wind_dir, wind_speed, wind_gust, precip, pressure, and visib. Measurements units were found using the data library for flights and weather data. The data was not cleaned in this step, so there are still some missing values. 
+There are 328,063 recordings (rows) and 32 variables (columns). The variables are mainly integer and numeric, but there is one logical variable and some character variables. In the context of the primary question, the key variables would be: dep_delay, arr_delay, temp, dewp, humid, wind_speed, wind_gust, precip, pressure, and visib. Measurements units were found using the data library for flights and weather data. The data was not cleaned in this step, so there are still some missing values. 
 
 # Question 7
 
@@ -281,11 +277,40 @@ ggplot() +
 
 # Question 9
 
-Finally, create as many plots and summary statistics as needed to answer the primary question above.
+Finally, create as many plots and summary statistics as needed to answer the primary question: Which weather phenomena have the most impact on flight delays?
+
+```{r}
+Weather_Variables <- c("dep_delay", "temp", "humid", "dewp", "wind_speed", "wind_gust", "precip", "pressure", "visib")
+
+Weather_Delay <- Merged_Flights_Weather
+Weather_Delay$Visibility_Category <- ifelse(is.na(Weather_Delay$visib), NA, ifelse(Weather_Delay$visib < 3, "Low Visibility", "High Visibility"))
+Weather_Delay$Precipitation_Category <- ifelse(is.na(Weather_Delay$precip), NA, ifelse(Weather_Delay$precip > 0, "Precipitation", "No Precipitation"))
+Weather_Delay$WindSpeed_Category <- ifelse(is.na(Weather_Delay$wind_speed), NA, ifelse(Weather_Delay$wind_speed >= 30, "High Wind", "Low Wind"))
+Weather_Delay$WindGust_Category <- ifelse(is.na(Weather_Delay$wind_gust), NA, ifelse(Weather_Delay$wind_gust >= 30, "High Gust", "Low Gust"))
+Weather_Delay$Pressure_Category <- ifelse(is.na(Weather_Delay$pressure), NA, ifelse(Weather_Delay$pressure >= 1015.92, "High Pressure", "Low Pressure"))
+Weather_Delay$Dewpoint_Category <- ifelse(is.na(Weather_Delay$dewp), NA, ifelse(Weather_Delay$dewp >= 65, "High Dewpoint", "Low Dewpoint"))
+Weather_Delay$Temperature_Category <- ifelse(is.na(Weather_Delay$temp), NA, ifelse(Weather_Delay$temp >= 100, "High Temp", "Low Temp"))
+Weather_Delay$Humidity_Category <- ifelse(is.na(Weather_Delay$humid), NA, ifelse(Weather_Delay$humid >= 60, "High Humidity", "Low Humidity"))
+
+Correlations <- cor(Weather_Delay[Weather_Variables], use = "pairwise.complete.obs", method = "spearman")
+
+Departure_Delay_Correlation <- Correlations[rownames(Correlations) != "dep_delay", "dep_delay"]
+Departure_Delay_Correlation <- Departure_Delay_Correlation[order(Departure_Delay_Correlation, decreasing = TRUE)]
+Departure_Delay_Correlation
+
+barplot(Departure_Delay_Correlation, horiz = TRUE, las = 1, col = ifelse(Departure_Delay_Correlation >0, "red", "blue"), xlab = "Correlation with Depature Delay", main = "Weather and Depature Delays")
+```
+
+
+## Notes
+
+Low visibility was determined as anything less than 3 miles. High wind and high gust were determined to be anything 30+ mph. High pressure was determined to be anything above 1015.92 millibars (30 inHg). https://www.faa.gov/nextgen/programs/weather/faq
+
+
 
 ```{r}
 Visibility <- Merged_Flights_Weather |>
-  mutate(Visibility_Category = case_when(is.na(visib) ~ NA_character_, visib < 1 ~ "Low Visibility", visib >= 1 ~ "High Visibility"))
+  mutate(Visibility_Category = case_when(is.na(visib) ~ NA_character_, visib < 3 ~ "Low Visibility", visib >= 3 ~ "High Visibility"))
 
 Visibility_Airport <- Visibility |>
   distinct(origin, time_hour, .keep_all = TRUE) |>
@@ -294,7 +319,14 @@ Visibility_Airport <- Visibility |>
   group_by(origin)
 
 Visibility_Airport <- Visibility_Airport |>
-  left_join(airports |> select(faa, lat, lon), by = c("origin"="faa"))
+  select(-any_of(c("lat","lon"))) |>
+  left_join(nycflights13::airports, by= c("origin" = "faa"))
+
+ggplot() +
+  geom_polygon(data = US_Map, aes(x = long, y = lat, group = group), fill = "gray", color = "white") +
+  geom_point(data = Visibility_Airport, aes(x = lon, y = lat, color = Visibility_Category)) + 
+  coord_quickmap(xlim= c(-75, -72), ylim = c(40, 41.5)) +
+  scale_color_manual(values = c("Low Visibility" = "Red", "High Visibility" = "Green"))
 ```
 
 ## Summary
