@@ -48,6 +48,7 @@ barplot(table(flights$dep_time_category), main = "Flights by Departure Time Cate
 
 barplot(table(flights$arr_time_category), main = "Flights by Arrival Time Category", xlab = "Arrival Time", ylab = "Number of Flights", ylim = c(0, 160000))
 ```
+
 ```{r}
 # Percentage of Flights that were Red Eye Flights (Depart: Afternoon and Evening, Arrive: Early Morning and Morning)
 
@@ -67,7 +68,7 @@ RedEyePercentage2
 
 ## Summary
 
-About 3.24% of flights were Red Eye Flights. 
+About 3.24% of flights were Red Eye Flights.
 
 # Question 3
 
@@ -82,7 +83,7 @@ as.data.frame(Carriers_by_Tailnum)
 
 ## Summary
 
-There were 17 planes that flew for multiple airlines. Planes N146PQ, N153PQ, N176PQ, N181PQ, N197PQ, N200PQ, N228PQ, and N232PQ flew for airlines 9E and EV. Planes N933AT, N935AT, N977AT, N978AT, N979AT, N981AT, N989AT, N990AT, and N994AT flew for airlines FL and DL. 
+There were 17 planes that flew for multiple airlines. Planes N146PQ, N153PQ, N176PQ, N181PQ, N197PQ, N200PQ, N228PQ, and N232PQ flew for airlines 9E and EV. Planes N933AT, N935AT, N977AT, N978AT, N979AT, N981AT, N989AT, N990AT, and N994AT flew for airlines FL and DL.
 
 # Question 4
 
@@ -100,6 +101,7 @@ The missing relationship between weather and airports is the airport of origin f
 # Question 5
 
 ## Part 1
+
 In order to address our primary question, we want to prepare a tidy dataset (a single data frame). This will consist of information from the flights and weather data. The year, month, day, hour, and origin variables from weather provide almost enough information to give each observation a unique value. Create a new variable in the weather dataset by pasting together those 5 variables, then determine how many duplicated values there are and explain why (Hint: compare your new variable to the time_hour variable).
 
 ```{r}
@@ -112,9 +114,10 @@ weather[duplicated(weather$Unique_Weather, fromLast = TRUE), c("time_hour", "Uni
 
 ### Summary
 
-There are 3 duplicated values in the newly created "Unique_Weather" variable, occurring on November 3rd, 2013 at 1:00 AM at each airport. This is because this day was the end of Daylight Saving time, and clocks were moved back an hour, so two observations of 1:00 AM were recorded at each airport. 
+There are 3 duplicated values in the newly created "Unique_Weather" variable, occurring on November 3rd, 2013 at 1:00 AM at each airport. This is because this day was the end of Daylight Saving time, and clocks were moved back an hour, so two observations of 1:00 AM were recorded at each airport.
 
 ## Part 2
+
 Now merge the flights data and the weather data so that each flight contains information about the weather at its departure airport at the time it was scheduled to take off. You’ll want to use the variables time_hour and origin in order to do this.
 
 ```{r}
@@ -132,7 +135,7 @@ names(Merged_Flights_Weather)[names(Merged_Flights_Weather) == "hour.x"] <- "hou
 
 On this merged dataset, perform steps 2-5 of the EDA checklist presented in class. Remember the context provided by our primary question above.
 
-EDA Checklist: 2. Check the size of the data. 3. Examine the variables and their types. 4. Look at the top and bottom of the data. 5. Visualize the distributions of key variables. 
+EDA Checklist: 2. Check the size of the data. 3. Examine the variables and their types. 4. Look at the top and bottom of the data. 5. Visualize the distributions of key variables.
 
 ```{r}
 # 2. Check the size of the data
@@ -194,13 +197,14 @@ mean(is.na(Merged_Flights_Weather$visib))
 ```
 
 ## Summary
-There are 328,063 recordings (rows) and 32 variables (columns). The variables are mainly integer and numeric, but there is one logical variable and some character variables. In the context of the primary question, the key variables would be: dep_delay, arr_delay, temp, dewp, humid, wind_speed, wind_gust, precip, pressure, and visib. Measurements units were found using the data library for flights and weather data. The data was not cleaned in this step, so there are still some missing values. 
+
+There are 328,063 recordings (rows) and 32 variables (columns). The variables are mainly integer and numeric, but there is one logical variable and some character variables. In the context of the primary question, the key variables would be: dep_delay, arr_delay, temp, dewp, humid, wind_speed, wind_gust, precip, pressure, and visib. Measurements units were found using the data library for flights and weather data. The data was not cleaned in this step, so there are still some missing values.
 
 # Question 7
 
 ## Part 1
 
-Calculate the average departure delay for each day (Hint: think about which variables you need in order to do this!). Which day had the worst average length of delay for departures? 
+Calculate the average departure delay for each day (Hint: think about which variables you need in order to do this!). Which day had the worst average length of delay for departures?
 
 ```{r}
 Daily_Delay <- Merged_Flights_Weather |>
@@ -213,11 +217,11 @@ head(Daily_Delay)
 
 ### Summary
 
-March 8th, 2013 was the worst day, as it had an average departure delay of ~84 minutes. 
+March 8th, 2013 was the worst day, as it had an average departure delay of \~84 minutes.
 
 ## Part 2
 
-Now calculate the averages by day and origin. Which airport had the worst single day for delays and when was it? 
+Now calculate the averages by day and origin. Which airport had the worst single day for delays and when was it?
 
 ```{r}
 Daily_Delay_Airport <- Merged_Flights_Weather |>
@@ -228,10 +232,9 @@ Daily_Delay_Airport <- Merged_Flights_Weather |>
 head(Daily_Delay_Airport)
 ```
 
-
 ### Summary
 
-LGA had the single worst day for delays on March 8th, 2013, with an average departure delay of ~106 minutes. 
+LGA had the single worst day for delays on March 8th, 2013, with an average departure delay of \~106 minutes.
 
 ## Part 3
 
@@ -246,10 +249,9 @@ Hourly_Delay_Airport <- Merged_Flights_Weather |>
 head(Hourly_Delay_Airport)
 ```
 
-
 ### Summary
 
-LGA had the worst single hour for delays on July 22nd, 2013 at 6 PM, with an average departure delay of ~310 minutes.
+LGA had the worst single hour for delays on July 22nd, 2013 at 6 PM, with an average departure delay of \~310 minutes.
 
 # Question 8
 
@@ -298,7 +300,7 @@ Departure_Delay_Correlation <- Correlations[rownames(Correlations) != "dep_delay
 Departure_Delay_Correlation <- Departure_Delay_Correlation[order(Departure_Delay_Correlation, decreasing = TRUE)]
 Departure_Delay_Correlation
 
-barplot(Departure_Delay_Correlation, horiz = TRUE, las = 1, col = ifelse(Departure_Delay_Correlation >0, "red", "blue"), xlab = "Correlation with Depature Delay", main = "Weather and Depature Delays")
+barplot(Departure_Delay_Correlation, horiz = TRUE, las = 1, col = ifelse(Departure_Delay_Correlation >0, "red", "blue"), xlab = "Correlation with Departure Delay", main = "Weather and Departure Delays")
 ```
 
 ```{r}
@@ -310,7 +312,7 @@ Visibility_Delay <- Weather_Delay |>
 ggplot(Visibility_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Visibility_Category)) +
   geom_col(position = "dodge") +
   scale_fill_manual(values = c("High Visibility" = "red", "Low Visibility" = "blue")) +
-  labs(title = "Average Departure Delay by Visibility", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Low Visibility indicates a longer depature delay", fill = "Visibility Category")
+  labs(title = "Average Departure Delay by Visibility", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Low Visibility indicates a longer departure delay", fill = "Visibility Category")
 
 plot(Weather_Delay$visib, Weather_Delay$dep_delay, xlab = "Visibility (miles)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Visbility", xlim = c(0,10))
 ```
@@ -324,7 +326,7 @@ Precipitation_Delay <- Weather_Delay |>
 ggplot(Precipitation_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Precipitation_Category)) +
   geom_col(position = "dodge") +
   scale_fill_manual(values = c( "No Precipitation" = "blue", "Precipitation" = "red")) +
-  labs(title = "Average Departure Delay by Precipitation", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Precipitation indicates a longer depature delay", fill = "Precipitation Category")
+  labs(title = "Average Departure Delay by Precipitation", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Precipitation indicates a longer departure delay", fill = "Precipitation Category")
 
 plot(Weather_Delay$precip, Weather_Delay$dep_delay, xlab = "Precipitaton (inches)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Precipitation")
 ```
@@ -338,7 +340,7 @@ WindSpeed_Delay <- Weather_Delay |>
 ggplot(WindSpeed_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = WindSpeed_Category)) +
   geom_col(position = "dodge") +
   scale_fill_manual(values = c("High Wind" = "red", "Low Wind" = "blue")) +
-  labs(title = "Average Departure Delay by Wind Speed", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Wind Speed indicates a longer depature delay", fill = "Wind Speed Category")
+  labs(title = "Average Departure Delay by Wind Speed", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Wind Speed indicates a longer departure delay", fill = "Wind Speed Category")
 
 plot(Weather_Delay$wind_speed, Weather_Delay$dep_delay, xlab = "Wind Speed (mph)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Wind Speed")
 
@@ -350,7 +352,7 @@ WindGust_Delay <- Weather_Delay |>
 ggplot(WindGust_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = WindGust_Category)) +
   geom_col(position = "dodge") +
   scale_fill_manual(values = c("High Gust" = "red", "Low Gust" = "blue")) +
-  labs(title = "Average Departure Delay by Wind Gust", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Wind Gust indicates a longer depature delay", fill = "Wind Gust Category")
+  labs(title = "Average Departure Delay by Wind Gust", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Wind Gust indicates a longer departure delay", fill = "Wind Gust Category")
 
 plot(Weather_Delay$wind_gust, Weather_Delay$dep_delay, xlab = "Wind Gust (mph)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Wind Gust")
 ```
@@ -364,7 +366,7 @@ Pressure_Delay <- Weather_Delay |>
 ggplot(Pressure_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Pressure_Category)) +
   geom_col(position = "dodge") +
   scale_fill_manual(values = c("High Pressure" = "red", "Low Pressure" = "blue")) +
-  labs(title = "Average Departure Delay by Atmospheric Pressure", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Low Pressure indicates a longer depature delay", fill = "Pressure Category")
+  labs(title = "Average Departure Delay by Atmospheric Pressure", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Low Pressure indicates a longer departure delay", fill = "Pressure Category")
 
 plot(Weather_Delay$pressure, Weather_Delay$dep_delay, xlab = "Pressure (millibars)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Atmospheric Pressure")
 ```
@@ -378,7 +380,7 @@ Dewp_Delay <- Weather_Delay |>
 ggplot(Dewp_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Dewpoint_Category)) +
   geom_col(position = "dodge") +
   scale_fill_manual(values = c("High Dew Point" = "red", "Low Dew Point" = "blue")) +
-  labs(title = "Average Departure Delay by Dew Point", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Dew Point indicates a longer depature delay", fill = "Dew Point Category")
+  labs(title = "Average Departure Delay by Dew Point", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Dew Point indicates a longer departure delay", fill = "Dew Point Category")
 
 plot(Weather_Delay$dewp, Weather_Delay$dep_delay, xlab = "Dew Point (Fahrenheit)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Dew Point")
 
@@ -390,7 +392,7 @@ Temp_Delay <- Weather_Delay |>
 ggplot(Temp_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Temperature_Category)) +
   geom_col(position = "dodge") +
   scale_fill_manual(values = c("Not Freezing" = "red", "Freezing" = "blue")) +
-  labs(title = "Average Departure Delay by Temperature", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Not Freezing Temperature indicates a longer depature delay", fill = "Temperature Category")
+  labs(title = "Average Departure Delay by Temperature", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Not Freezing Temperature indicates a longer departure delay", fill = "Temperature Category")
 
 plot(Weather_Delay$temp, Weather_Delay$dep_delay, xlab = "Temperature (Fahrenheit)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Temperature")
 
@@ -402,17 +404,16 @@ Humid_Delay <- Weather_Delay |>
 ggplot(Humid_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Humidity_Category)) +
   geom_col(position = "dodge") +
   scale_fill_manual(values = c("High Humidity" = "red", "Low Humidity" = "blue")) +
-  labs(title = "Average Departure Delay by Humidity", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Humidity indicates a longer depature delay", fill = "Humidity Category")
+  labs(title = "Average Departure Delay by Humidity", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Humidity indicates a longer departure delay", fill = "Humidity Category")
 
 plot(Weather_Delay$humid, Weather_Delay$dep_delay, xlab = "Humidity", ylab = "Departure Delay (minutes)", main = "Departure Delay by Humidity")
 
 ```
 
-
 ## Notes
 
-Low visibility was determined as anything less than 3 miles. High wind and high gust were determined to be anything 30+ mph. High pressure was determined to be anything above 1015.92 millibars (30 inHg). Ground de-icing occurs at 32°F, per FAA guidelines. High dew point was determined as anything greater than 60°F. High humidity was determined as anything greater than 70%.  https://www.faa.gov/nextgen/programs/weather/faq, https://www.faa.gov/air_traffic/publications/atpubs/aim_html/chap_7.html, https://www.faa.gov/other_visit/aviation_industry/airline_operators/airline_safety/deicing, https://www.weather.gov/lmk/humidity, https://www.weather.gov/arx/heat_index, and https://www.weather.gov/arx/why_dewpoint_vs_humidity were used as sources for these metrics.
+Low visibility was determined as anything less than 3 miles. High wind and high gust were determined to be anything 30+ mph. High pressure was determined to be anything above 1015.92 millibars (30 inHg). Ground de-icing occurs at 32°F, per FAA guidelines, and winter storms form at or below 32°F, per NOAA. High dew point was determined as anything greater than 60°F. High humidity was determined as anything greater than 70%. Lastly, precipitation was determined as anything greater than 0 inches of precipitation. https://www.faa.gov/nextgen/programs/weather/faq, https://www.faa.gov/air_traffic/publications/atpubs/aim_html/chap_7.html, https://www.faa.gov/other_visit/aviation_industry/airline_operators/airline_safety/deicing, https://www.nssl.noaa.gov/education/svrwx101/winter/, https://www.weather.gov/lmk/humidity, https://www.weather.gov/arx/heat_index, and https://www.weather.gov/arx/why_dewpoint_vs_humidity were used as sources for these metrics.
 
 ## Summary
 
-Atmospheric pressure and visibility had weak negative associations with departure delay. Though flights experienced longer delays under low visibility and atmospheric pressure conditions, both of which accompany rain, snow, and storms, the correlations suggest that these two variables alone had limited influence on departure delays. Wind gust, temperature, wind speed, dew point, humidity, and precipitation had weak positive associations with departure delay, with precipitation having the strongest association at ~0.12. Flights experienced delays in high wind speed, wind gust, dew point, humidity, and not freezing temperature conditions, as well as when it was precipitating. These variables, besides not freezing temperatures, also accompany rain, snow, and storms, suggesting that winter storm conditions may have an impact on flight delays. However, the calculated correlations are weak, so weather alone cannot establish causation, but does provide some explanation for the delays. Along with that, "not freezing" temperatures were established as anything above 32°F, which is when water freezes. This means that temperatures just above 32°F are categorized as "not freezing". 
+Atmospheric pressure and visibility had weak negative associations with departure delay. Though flights experienced longer delays under low visibility and atmospheric pressure conditions, both of which accompany rain, snow, and storms, the correlations suggest that these two variables alone had limited influence on departure delays. Wind gust, temperature, wind speed, dew point, humidity, and precipitation had weak positive associations with departure delay, with precipitation having the strongest association at ~0.12. Flights experienced delays in high wind speed, wind gust, dew point, humidity, and "not freezing" temperature conditions, as well as when it was precipitating. These variables, besides "not freezing" temperatures, also accompany rain, snow, and storms, suggesting that winter storm conditions may have an impact on flight delays. However, the calculated correlations are weak, so weather alone cannot establish causation, but does provide some explanation for the delays. Along with that, "not freezing" temperatures were established as anything above 32°F, which is when water freezes. This means that temperatures just above 32°F are categorized as "not freezing". Dew point, humidity, and temperature interact with each other, which could make the air feel cooler than the raw temperature measurement. Again, all of these variables must be taken into account altogether, as their correlations were weak. 
