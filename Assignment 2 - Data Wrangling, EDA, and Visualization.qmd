@@ -289,8 +289,8 @@ Weather_Delay$WindSpeed_Category <- ifelse(is.na(Weather_Delay$wind_speed), NA, 
 Weather_Delay$WindGust_Category <- ifelse(is.na(Weather_Delay$wind_gust), NA, ifelse(Weather_Delay$wind_gust >= 30, "High Gust", "Low Gust"))
 Weather_Delay$Pressure_Category <- ifelse(is.na(Weather_Delay$pressure), NA, ifelse(Weather_Delay$pressure >= 1015.92, "High Pressure", "Low Pressure"))
 Weather_Delay$Dewpoint_Category <- ifelse(is.na(Weather_Delay$dewp), NA, ifelse(Weather_Delay$dewp >= 65, "High Dew Point", "Low Dew Point"))
-Weather_Delay$Temperature_Category <- ifelse(is.na(Weather_Delay$temp), NA, ifelse(Weather_Delay$temp >= 100, "High Temp", "Low Temp"))
-Weather_Delay$Humidity_Category <- ifelse(is.na(Weather_Delay$humid), NA, ifelse(Weather_Delay$humid >= 60, "High Humidity", "Low Humidity"))
+Weather_Delay$Temperature_Category <- ifelse(is.na(Weather_Delay$temp), NA, ifelse(Weather_Delay$temp >= 32, "Not Freezing", "Freezing"))
+Weather_Delay$Humidity_Category <- ifelse(is.na(Weather_Delay$humid), NA, ifelse(Weather_Delay$humid >= 70, "High Humidity", "Low Humidity"))
 
 Correlations <- cor(Weather_Delay[Weather_Variables], use = "pairwise.complete.obs", method = "spearman")
 
@@ -302,99 +302,107 @@ barplot(Departure_Delay_Correlation, horiz = TRUE, las = 1, col = ifelse(Departu
 ```
 
 ```{r}
-High_Visibility_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Visibility_Category == "High Visibility"], na.rm = TRUE)
+Visibility_Delay <- Weather_Delay |>
+  filter(!is.na(Visibility_Category),!is.na(dep_delay)) |>
+  group_by(origin, Visibility_Category) |>
+  summarize(Departure_Delay_Mean = mean(dep_delay), Number_of_Flights = n(),.groups = "drop")
 
-Low_Visibitiliy_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Visibility_Category == "Low Visibility"], na.rm = TRUE)
-
-Visibility_Delay <- data.frame(Visibility_Category = c("High Visibility", "Low Visibility"), Departure_Delay_Mean = c(High_Visibility_Mean, Low_Visibitiliy_Mean))
-Visibility_Delay
-
-barplot(Visibility_Delay$Departure_Delay_Mean, names.arg = Visibility_Delay$Visibility_Category, col = c("red", "blue"), ylab = "Average Departure Delay (minutes)", xlab = "Visbility Category", main = "Average Depature Delay by Visibility", sub = "A higher average for Low Visibility indicates a longer depature delay")
+ggplot(Visibility_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Visibility_Category)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("High Visibility" = "red", "Low Visibility" = "blue")) +
+  labs(title = "Average Departure Delay by Visibility", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Low Visibility indicates a longer depature delay", fill = "Visibility Category")
 
 plot(Weather_Delay$visib, Weather_Delay$dep_delay, xlab = "Visibility (miles)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Visbility", xlim = c(0,10))
 ```
 
 ```{r}
-No_Precipitation_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Precipitation_Category == "No Precipitation"], na.rm = TRUE)
+Precipitation_Delay <- Weather_Delay |>
+  filter(!is.na(Precipitation_Category),!is.na(dep_delay)) |>
+  group_by(origin, Precipitation_Category) |>
+  summarize(Departure_Delay_Mean = mean(dep_delay), Number_of_Flights = n(),.groups = "drop")
 
-Precipitation_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Precipitation_Category == "Precipitation"], na.rm = TRUE)
-
-Precipitation_Delay <- data.frame(Precipitation_Category = c("No Precipitation", "Precipitation"), Departure_Delay_Mean = c(No_Precipitation_Mean, Precipitation_Mean))
-Precipitation_Delay
-
-barplot(Precipitation_Delay$Departure_Delay_Mean, names.arg = Precipitation_Delay$Precipitation_Category, col = c("red", "blue"), ylab = "Average Departure Delay (minutes)", xlab = "Precipitation Category", main = "Average Depature Delay by Precipitation Status", sub = "A higher average for Precipitation indicates a longer depature delay")
+ggplot(Precipitation_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Precipitation_Category)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c( "No Precipitation" = "blue", "Precipitation" = "red")) +
+  labs(title = "Average Departure Delay by Precipitation", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Precipitation indicates a longer depature delay", fill = "Precipitation Category")
 
 plot(Weather_Delay$precip, Weather_Delay$dep_delay, xlab = "Precipitaton (inches)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Precipitation")
 ```
 
 ```{r}
-High_Wind_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$WindSpeed_Category == "High Wind"], na.rm = TRUE)
+WindSpeed_Delay <- Weather_Delay |>
+  filter(!is.na(WindSpeed_Category),!is.na(dep_delay)) |>
+  group_by(origin, WindSpeed_Category) |>
+  summarize(Departure_Delay_Mean = mean(dep_delay), Number_of_Flights = n(),.groups = "drop")
 
-Low_Wind_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$WindSpeed_Category == "Low Wind"], na.rm = TRUE)
-
-WindSpeed_Delay <- data.frame(WindSpeed_Category = c("High Wind", "Low Wind"), Departure_Delay_Mean = c(High_Wind_Mean, Low_Wind_Mean))
-WindSpeed_Delay
-
-barplot(WindSpeed_Delay$Departure_Delay_Mean, names.arg = WindSpeed_Delay$WindSpeed_Category, col = c("red", "blue"), ylab = "Average Departure Delay (minutes)", xlab = "Wind Speed Category", main = "Average Depature Delay by Wind Speed", sub = "A higher average for High Wind Speed indicates a longer depature delay")
+ggplot(WindSpeed_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = WindSpeed_Category)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("High Wind" = "red", "Low Wind" = "blue")) +
+  labs(title = "Average Departure Delay by Wind Speed", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Wind Speed indicates a longer depature delay", fill = "Wind Speed Category")
 
 plot(Weather_Delay$wind_speed, Weather_Delay$dep_delay, xlab = "Wind Speed (mph)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Wind Speed")
 
-High_Gust_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$WindGust_Category == "High Gust"], na.rm = TRUE)
+WindGust_Delay <- Weather_Delay |>
+  filter(!is.na(WindGust_Category),!is.na(dep_delay)) |>
+  group_by(origin, WindGust_Category) |>
+  summarize(Departure_Delay_Mean = mean(dep_delay), Number_of_Flights = n(),.groups = "drop")
 
-Low_Gust_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$WindGust_Category == "Low Gust"], na.rm = TRUE)
-
-WindGust_Delay <- data.frame(WindGust_Category = c("High Gust", "Low Gust"), Departure_Delay_Mean = c(High_Gust_Mean, Low_Gust_Mean))
-WindGust_Delay
-
-barplot(WindGust_Delay$Departure_Delay_Mean, names.arg = WindGust_Delay$WindGust_Category, col = c("red", "blue"), ylab = "Average Departure Delay (minutes)", xlab = "Wind Gust Category", main = "Average Depature Delay by Wind Gust", sub = "A higher average for High Wind Gust indicates a longer depature delay")
+ggplot(WindGust_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = WindGust_Category)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("High Gust" = "red", "Low Gust" = "blue")) +
+  labs(title = "Average Departure Delay by Wind Gust", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Wind Gust indicates a longer depature delay", fill = "Wind Gust Category")
 
 plot(Weather_Delay$wind_gust, Weather_Delay$dep_delay, xlab = "Wind Gust (mph)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Wind Gust")
 ```
 
 ```{r}
-High_Pressure_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Pressure_Category == "High Pressure"], na.rm = TRUE)
+Pressure_Delay <- Weather_Delay |>
+  filter(!is.na(Pressure_Category),!is.na(dep_delay)) |>
+  group_by(origin, Pressure_Category) |>
+  summarize(Departure_Delay_Mean = mean(dep_delay), Number_of_Flights = n(),.groups = "drop")
 
-Low_Pressure_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Pressure_Category == "Low Pressure"], na.rm = TRUE)
-
-Pressure_Delay <- data.frame(Pressure_Category = c("High Pressure", "Low Pressure"), Departure_Delay_Mean = c(High_Pressure_Mean, Low_Pressure_Mean))
-Pressure_Delay
-
-barplot(Pressure_Delay$Departure_Delay_Mean, names.arg = Pressure_Delay$Pressure_Category, col = c("red", "blue"), ylab = "Average Departure Delay (minutes)", xlab = "Atmospheric Pressure Category", main = "Average Depature Delay by Pressure Status", sub = "A higher average for Low Pressure indicates a longer depature delay")
+ggplot(Pressure_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Pressure_Category)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("High Pressure" = "red", "Low Pressure" = "blue")) +
+  labs(title = "Average Departure Delay by Atmospheric Pressure", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Low Pressure indicates a longer depature delay", fill = "Pressure Category")
 
 plot(Weather_Delay$pressure, Weather_Delay$dep_delay, xlab = "Pressure (millibars)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Atmospheric Pressure")
 ```
 
 ```{r}
-High_Dewp_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Dewpoint_Category == "High Dew Point"], na.rm = TRUE)
+Dewp_Delay <- Weather_Delay |>
+  filter(!is.na(Dewpoint_Category),!is.na(dep_delay)) |>
+  group_by(origin, Dewpoint_Category) |>
+  summarize(Departure_Delay_Mean = mean(dep_delay), Number_of_Flights = n(),.groups = "drop")
 
-Low_Dewp_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Dewpoint_Category == "Low Dew Point"], na.rm = TRUE)
-
-Dewp_Delay <- data.frame(Dewpoint_Category = c("High Dew Point", "Low Dew Point"), Departure_Delay_Mean = c(High_Dewp_Mean, Low_Dewp_Mean))
-Dewp_Delay
-
-barplot(Dewp_Delay$Departure_Delay_Mean, names.arg = Dewp_Delay$Dewpoint_Category, col = c("red", "blue"), ylab = "Average Departure Delay (minutes)", xlab = "Dew Point Category", main = "Average Depature Delay by Dew Point", sub = "A higher average for High Dew Point indicates a longer depature delay")
+ggplot(Dewp_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Dewpoint_Category)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("High Dew Point" = "red", "Low Dew Point" = "blue")) +
+  labs(title = "Average Departure Delay by Dew Point", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Dew Point indicates a longer depature delay", fill = "Dew Point Category")
 
 plot(Weather_Delay$dewp, Weather_Delay$dep_delay, xlab = "Dew Point (Fahrenheit)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Dew Point")
 
-High_Temp_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Temperature_Category == "High Temp"], na.rm = TRUE)
+Temp_Delay <- Weather_Delay |>
+  filter(!is.na(Temperature_Category),!is.na(dep_delay)) |>
+  group_by(origin, Temperature_Category) |>
+  summarize(Departure_Delay_Mean = mean(dep_delay), Number_of_Flights = n(),.groups = "drop")
 
-Low_Temp_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Temperature_Category == "Low Temp"], na.rm = TRUE)
-
-Temp_Delay <- data.frame(Temperature_Category = c("High Temperature", "Low Temperature"), Departure_Delay_Mean = c(High_Temp_Mean, Low_Temp_Mean))
-Temp_Delay
-
-barplot(Temp_Delay$Departure_Delay_Mean, names.arg = Temp_Delay$Temperature_Category, col = c("red", "blue"), ylab = "Average Departure Delay (minutes)", xlab = "Temperature Category", main = "Average Depature Delay by Temperature", sub = "A higher average for High Temperature indicates a longer depature delay")
+ggplot(Temp_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Temperature_Category)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("Not Freezing" = "red", "Freezing" = "blue")) +
+  labs(title = "Average Departure Delay by Temperature", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Not Freezing Temperature indicates a longer depature delay", fill = "Temperature Category")
 
 plot(Weather_Delay$temp, Weather_Delay$dep_delay, xlab = "Temperature (Fahrenheit)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Temperature")
 
-High_Humid_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Humidity_Category == "High Humidity"], na.rm = TRUE)
+Humid_Delay <- Weather_Delay |>
+  filter(!is.na(Humidity_Category),!is.na(dep_delay)) |>
+  group_by(origin, Humidity_Category) |>
+  summarize(Departure_Delay_Mean = mean(dep_delay), Number_of_Flights = n(),.groups = "drop")
 
-Low_Humid_Mean <- mean(Weather_Delay$dep_delay[Weather_Delay$Humidity_Category == "Low Humidity"], na.rm = TRUE)
-
-Humid_Delay <- data.frame(Humidity_Category = c("High Humidity", "Low Humidity"), Departure_Delay_Mean = c(High_Humid_Mean, Low_Humid_Mean))
-Humid_Delay
-
-barplot(Humid_Delay$Departure_Delay_Mean, names.arg = Humid_Delay$Humidity_Category, col = c("red", "blue"), ylab = "Average Departure Delay (minutes)", xlab = "Humidity Category", main = "Average Depature Delay by Humidity", sub = "A higher average for High Humidity indicates a longer depature delay")
+ggplot(Humid_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Humidity_Category)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("High Humidity" = "red", "Low Humidity" = "blue")) +
+  labs(title = "Average Departure Delay by Humidity", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for High Humidity indicates a longer depature delay", fill = "Humidity Category")
 
 plot(Weather_Delay$humid, Weather_Delay$dep_delay, xlab = "Humidity", ylab = "Departure Delay (minutes)", main = "Departure Delay by Humidity")
 
@@ -403,30 +411,8 @@ plot(Weather_Delay$humid, Weather_Delay$dep_delay, xlab = "Humidity", ylab = "De
 
 ## Notes
 
-Low visibility was determined as anything less than 3 miles. High wind and high gust were determined to be anything 30+ mph. High pressure was determined to be anything above 1015.92 millibars (30 inHg). https://www.faa.gov/nextgen/programs/weather/faq was used as a source.
+Low visibility was determined as anything less than 3 miles. High wind and high gust were determined to be anything 30+ mph. High pressure was determined to be anything above 1015.92 millibars (30 inHg). Ground de-icing occurs at 32°F, per FAA guidelines. High dew point was determined as anything greater than 60°F. High humidity was determined as anything greater than 70%.  https://www.faa.gov/nextgen/programs/weather/faq, https://www.faa.gov/air_traffic/publications/atpubs/aim_html/chap_7.html, https://www.faa.gov/other_visit/aviation_industry/airline_operators/airline_safety/deicing, https://www.weather.gov/lmk/humidity, https://www.weather.gov/arx/heat_index, and https://www.weather.gov/arx/why_dewpoint_vs_humidity were used as sources for these metrics.
 
 ## Summary
-Atmospheric pressure and visibility were found to have a weak negative association with departure delay. Though flights experienced longer delays under low visibility and atmospheric pressure conditions, both of which are associated with rain and storms, the correlations suggest that these two variables alone had limited influence on departure delays. Wind gust, temperature, wind speed, dew point, humidity, and precipitation had weak positive associations with departure delay, with precipitation having the strongest association at ~0.12. Flights experienced delays in high wind speed, wind gust, dew point, humidity, and temperature conditions,as well as when it was precipitating. All of these conditions are associated with storms. Taking all of these variables into account, including visibility and atmospheric pressure, it appears that storm conditions is the weather phenomena that has the most impact on flight delays.
 
-```{r}
-Visibility <- Merged_Flights_Weather |>
-  mutate(Visibility_Category = case_when(is.na(visib) ~ NA_character_, visib < 3 ~ "Low Visibility", visib >= 3 ~ "High Visibility"))
-
-Visibility_Airport <- Visibility |>
-  distinct(origin, time_hour, .keep_all = TRUE) |>
-  filter(!is.na(Visibility_Category)) |>
-  count(origin, Visibility_Category, name = "Number of Hours") |>
-  group_by(origin)
-
-Visibility_Airport <- Visibility_Airport |>
-  select(-any_of(c("lat","lon"))) |>
-  left_join(nycflights13::airports, by= c("origin" = "faa"))
-
-ggplot() +
-  geom_polygon(data = US_Map, aes(x = long, y = lat, group = group), fill = "gray", color = "white") +
-  geom_point(data = Visibility_Airport, aes(x = lon, y = lat, color = Visibility_Category)) + 
-  coord_quickmap(xlim= c(-75, -72), ylim = c(40, 41.5)) +
-  scale_color_manual(values = c("Low Visibility" = "Red", "High Visibility" = "Green"))
-```
-
-## Summary
+Atmospheric pressure and visibility had weak negative associations with departure delay. Though flights experienced longer delays under low visibility and atmospheric pressure conditions, both of which accompany rain, snow, and storms, the correlations suggest that these two variables alone had limited influence on departure delays. Wind gust, temperature, wind speed, dew point, humidity, and precipitation had weak positive associations with departure delay, with precipitation having the strongest association at ~0.12. Flights experienced delays in high wind speed, wind gust, dew point, humidity, and not freezing temperature conditions, as well as when it was precipitating. These variables, besides not freezing temperatures, also accompany rain, snow, and storms, suggesting that winter storm conditions may have an impact on flight delays. However, the calculated correlations are weak, so weather alone cannot establish causation, but does provide some explanation for the delays. Along with that, "not freezing" temperatures were established as anything above 32°F, which is when water freezes. This means that temperatures just above 32°F are categorized as "not freezing". 
