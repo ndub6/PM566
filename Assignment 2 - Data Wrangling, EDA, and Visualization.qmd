@@ -314,7 +314,7 @@ ggplot(Visibility_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Visibili
   scale_fill_manual(values = c("High Visibility" = "red", "Low Visibility" = "blue")) +
   labs(title = "Average Departure Delay by Visibility", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Low Visibility indicates a longer departure delay", fill = "Visibility Category")
 
-plot(Weather_Delay$visib, Weather_Delay$dep_delay, xlab = "Visibility (miles)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Visbility", xlim = c(0,10))
+plot(Weather_Delay$visib, Weather_Delay$dep_delay, xlab = "Visibility (miles)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Visibility", xlim = c(0,10))
 ```
 
 ```{r}
