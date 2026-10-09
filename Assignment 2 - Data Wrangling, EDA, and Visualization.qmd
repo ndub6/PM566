@@ -31,7 +31,7 @@ Top10Flights
 
 ## Summary
 
-The 10 most popular destinations in the flights data, in order from most to least popular and with the number of flights that went to each in parantheses, are: ORD (17,283), ATL (17,215), LAX (16,174), BOS (15,508), MCO (14082), CLT (14,064), SFO (13,331), FLL (12,055), MIA (11,728), and DCA (9705).
+The 10 most popular destinations in the flights data, in order from most to least popular and with the number of flights in parentheses, are: ORD (17,283), ATL (17,215), LAX (16,174), BOS (15,508), MCO (14082), CLT (14,064), SFO (13,331), FLL (12,055), MIA (11,728), and DCA (9705).
 
 # Question 2
 
@@ -57,18 +57,16 @@ flights$red_eye <- flights$dep_time_category %in% c("Afternoon", "Evening") & fl
 
 RedEyePercentage <- mean(flights$red_eye, na.rm = TRUE) * 100
 
-RedEyePercentage
-
 RedEyeNumber <- table(flights$red_eye)
 
-RedEyePercentage2 <- data.frame(Red_Eye = names(RedEyeNumber), Amount = as.vector(RedEyeNumber), Percentage = as.vector(prop.table(RedEyeNumber)*100))
+RedEyePercentage <- data.frame(Red_Eye = names(RedEyeNumber), Amount = as.vector(RedEyeNumber), Percentage = as.vector(prop.table(RedEyeNumber)*100))
 
-RedEyePercentage2
+RedEyePercentage
 ```
 
 ## Summary
 
-About 3.24% of flights were Red Eye Flights.
+About 3.24% (10,633) of flights were Red Eye Flights.
 
 # Question 3
 
@@ -96,7 +94,7 @@ airports
 
 ## Summary
 
-The missing relationship between weather and airports is the airport of origin from which the weather observation was made. In weather, the airport of origin is under the column "origin." In airports, the column "faa" refers to the FAA code of the airport. However, it appears that there are only three origins in weather, those being EWR, LGA, and JFK, while airports has 1,458 FAA codes. In the diagram, a connection should be made between weather "origin" and airports "faa."
+The missing relationship between weather and airports is between "origin and "faa." In weather, the origin column stores FAA codes for EWR, LGA, and JFK. In airports, the "faa" column stores FAA codes for 1,458 airports. In the diagram, a connectio should be made between weather "origin" and airports "faa."
 
 # Question 5
 
@@ -198,7 +196,7 @@ mean(is.na(Merged_Flights_Weather$visib))
 
 ## Summary
 
-There are 328,063 recordings (rows) and 32 variables (columns). The variables are mainly integer and numeric, but there is one logical variable and some character variables. In the context of the primary question, the key variables would be: dep_delay, arr_delay, temp, dewp, humid, wind_speed, wind_gust, precip, pressure, and visib. Measurements units were found using the data library for flights and weather data. The data was not cleaned in this step, so there are still some missing values.
+There are 328,063 recordings (rows) and 32 variables (columns). The variables are mainly integer and numeric, but there is one logical variable and some character variables. In the context of the primary question, the key variables would be: dep_delay, temp, dewp, humid, wind_speed, wind_gust, precip, pressure, and visib. Measurement units were found using the data library for flights and weather data (https://nycflights13.tidyverse.org/reference/flights.html). The data was not cleaned in this step, so there are still some missing values.
 
 # Question 7
 
@@ -217,7 +215,7 @@ head(Daily_Delay)
 
 ### Summary
 
-March 8th, 2013 was the worst day, as it had an average departure delay of \~84 minutes.
+March 8th, 2013 was the worst day, as it had an average departure delay of about 84 minutes.
 
 ## Part 2
 
@@ -234,7 +232,7 @@ head(Daily_Delay_Airport)
 
 ### Summary
 
-LGA had the single worst day for delays on March 8th, 2013, with an average departure delay of \~106 minutes.
+LGA had the single worst day for delays on March 8th, 2013, with an average departure delay of about 106 minutes.
 
 ## Part 3
 
@@ -251,7 +249,7 @@ head(Hourly_Delay_Airport)
 
 ### Summary
 
-LGA had the worst single hour for delays on July 22nd, 2013 at 6 PM, with an average departure delay of \~310 minutes.
+LGA had the worst single hour for delays on July 22nd, 2013 at 6 PM, with an average departure delay of about 310 minutes.
 
 # Question 8
 
@@ -273,7 +271,7 @@ US_Map <- map_data("state")
 ggplot() +
   geom_polygon(data = US_Map, aes(x = long, y = lat, group = group), fill = "gray", color = "white") +
   geom_point(data=airports,  aes(x = lon, y = lat, color = Average_Arrival_Delay)) + 
-  scale_color_gradient2(low = "darkblue", mid = "orange", high = "cyan", name = "Average Arrival Delay (Minutes)") +
+  scale_color_gradient2(low = "cyan", mid = "orange", high = "darkblue", name = "Average Arrival Delay (Minutes)") +
   labs(title = "Average Arrival Delay by Arrival Airport", x = "Longitude", y = "Latitude")
 ```
 
@@ -315,7 +313,7 @@ ggplot(Visibility_Delay,aes(x = origin, y = Departure_Delay_Mean,fill = Visibili
   labs(title = "Average Departure Delay by Visibility", x = "Departure Airport", y = "Average Departure Delay (minutes)", subtitle = "A higher average for Low Visibility indicates a longer departure delay", fill = "Visibility Category")
 
 complete_rows <- complete.cases(Weather_Delay$visib, Weather_Delay$dep_delay)
-plot(Weather_Delay$visib, Weather_Delay$dep_delay, xlab = "Visibility (miles)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Visbility", xlim = c(0,10))
+plot(Weather_Delay$visib, Weather_Delay$dep_delay, xlab = "Visibility (miles)", ylab = "Departure Delay (minutes)", main = "Departure Delay by Visibility", xlim = c(0,10))
 lines(lowess(Weather_Delay$visib[complete_rows], Weather_Delay$dep_delay[complete_rows]), col = "red")
 ```
 
@@ -461,7 +459,7 @@ Low visibility was determined as anything less than 3 miles. High wind and high 
 
 ## Summary
 
-The barplots and scatterplots suggest that storm-related weather conditions had the greatest relationship with departure delays. Precipitation, low atmospheric pressure, and low visibility had the strongest associations, with precipitation having the largest correlation at ~0.12. However, all correlations are weak, suggesting that the variables should be taken into account altogether, as they all occur in storm conditions. Delays were also longer during high wind speeds, high wind gust, high dew points, and high humidity. All these conditions occur together during storms. The scatterplots contain overplotting, making patterns difficult to interpret, so they should be considered alongside the barplots. Altogether, the plots indicate that storm-related conditions were associated with longer departure delays, but weather only provides a limited explanation. It should be mentioned that categorizing temperature as "freezing" and "not freezing" at a threshold of 32°F creates broad groups and classifies those temperatures just above 32°F as "not freezing." De-icing occurs in the presence of ice, not just temperature. Dew point, humidity, temperature, precipitation, and wind interact with each other, and may affect icing conditions.
+The barplots, scatterplots, and correlations suggest that storm-related weather conditions had the greatest relationship with departure delays. Precipitation, low atmospheric pressure, and low visibility had the strongest associations, with precipitation having the largest correlation at ~0.12. Delays were also longer during high wind speeds, high wind gust, high dew points, and high humidity. However, all correlations are weak, suggesting that individual variables do not explain the variation. Since these variables commonly occur together during storms, their pattern suggests that storm-related weather was associated with longer departure delays. The scatterplots contain overplotting, making patterns difficult to interpret, so they should be considered alongside the barplots and correlations. It should be mentioned that categorizing temperature as "freezing" and "not freezing" at a threshold of 32°F creates broad groups and classifies those temperatures just above 32°F as "not freezing." De-icing occurs in the presence of ice, not just temperature. Dew point, humidity, temperature, precipitation, and wind interact with each other, and may create icing conditions, which can lead to delays.
 
 Based on the data library for this dataset, the precipitation variable does not differentiate between rain or snow. Wanting to determine the type of storm that causes departure delays, I plotted weather conditions by month, however, I acknowledge that month alone does not identify the type of storm that occurred. During the colder months of January, February, March, December, storm conditions may have had snow, ice, or rain. These conditions occur with low atmospheric pressure, lower temperatures, precipitation, high humidity, high dew points, and high winds, resulting in weather that may lower visibility. During the warmer months of April, May, and June, storm conditions may have had thunderstorms or rain. These conditions occur with low atmospheric pressure, high humidity, high dew points, and high winds.
 
