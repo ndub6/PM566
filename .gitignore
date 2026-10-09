@@ -8,9 +8,10 @@ data/
 .RDataTmp1
 .RDataTmp2
 .RDataTmp3
-.Rhistory
+*.Rhistory
 Analysis
-.RData
+*.RData
+*.RDataTmp
 =======
 
 >>>>>>> 035c18a574bd53d3087ce8cb43e04ba68794a4e3
