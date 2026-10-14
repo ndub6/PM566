@@ -1,0 +1,172 @@
+---
+title: "Regular Expressions and Web Scraping"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+# Regular Expressions: What is it?
+
+A regular expression (regex or regexp) is a sequence of characters that define a search pattern
+
+We can use Regex for:
+- Validating data fields
+- Searching text in various formats
+- Replace text
+- Remove text
+
+# Metacharacters
+
+. any character except new line
+^ beginning of the text
+$ end of text
+[expression] match any single character in "expression"
+- [0123456789] any digit
+- [0-9] any digit in range 0-9
+- [a-z] lower-case letters
+- [A-Z] upper-case letters
+- [a-zA-Z] lower or upper-case letters
+- [a-zA-Z0-9] any alpha-numeric
+
+
+[^regex] Match any except those in regex
+- [^0123456789] match any except a number
+- [^0-9] match any except in the range 0-9
+- [^./] any except dot, slash, and space
+
+Ranges (0-9 or a-z) are locale- and implementation-dependent, meaning that the range may vary depending on the OS' language. To solve for this, you could use Character Classes.
+
+[[:lower:]] lower case letters in current locale
+[[:upper:]] upper case letters in current locale
+[[:alpha:]] upper and lower case letters in current locale
+[[:digit:]] digits
+[[:alnum:]] alpha numeric characers
+[[:punct:]] punctuation characters
+
+\\s white space
+| or logical or
+
+regex? zero or one match
+regex* zero or more matches
+regex+ one or more matches
+regex{n,} at least n matches
+regex{,m} at most m matches
+regex{n,m} between n and m matches
+
+(regex) group capture
+(?:regex) group operation without capture
+A(?=B) look ahead (match). Find expression A where B follows
+A(?!B) look ahead (don't match). Find expression A where B does not follow
+(?=<B)A look behind (match). Find expression A where B precedes
+(?<!B)A look behind (don't match). Find expression A where B does not precede
+
+# Functions in R
+
+1. Find in text: grepl(), stringr::str_detect()
+2. Similar to which(), which elemenets are TRUE grep(), stringr::str_which()
+3. Replace the first instance: sub(), stringr::str_replace()
+4. Replace all instances: gsub(), stringr::str_replace_all()
+5. Extract text: regmatches() plus regexpr(), stringr::str_extract() and stringr::str_extract_all()
+
+```{r}
+# Where are we getting the data from
+mts_url <- "https://github.com/USCbiostats/data-science-data/raw/master/00_mtsamples/mtsamples.csv"
+
+# Downloading the data to a tempfile (so it is destroyed afterwards)
+tmp <- tempfile(pattern = "mtsamples", fileext = ".csv")
+
+# We should be downloading this, ONLY IF this was not downloaded already.
+# otherwise is just a waste of time.
+if (!file.exists(tmp)) {
+  download.file(
+    url      = mts_url,
+    destfile = tmp,
+    # method   = "libcurl", timeout = 1000 (you may need this option)
+  )
+}
+
+# read the file
+mtsamples <- read.csv(tmp, header = TRUE, row.names = 1)
+```
+
+We want to know if each entry is tumor-related:
+```{r}
+# How many entries contain the word tumor?
+sum(grepl("tumor", mtsamples$description, ignore.case = TRUE))
+
+# Generating a column tagging tumor
+mtsamples$tumor_related <- grepl("tumor", mtsamples$description, ignore.case = TRUE)
+
+# Taking a look at a few examples
+mtsamples$description[mtsamples$tumor_related == TRUE][1:3]
+```
+Finds how many entries contain "tumor", then pulls the top 3 examples
+
+Now, find the pronouns of a patient
+```{r}
+library(stringr)
+mtsamples$pronoun <- str_extract(
+  string  = tolower(mtsamples$transcription),
+  pattern = "he|his|him|they|them|theirs|ze|hir|hirs|she|hers|her"
+)
+
+mtsamples$transcription[1]
+```
+The problem with this approach is that other words will be included in this search. For example, "the" will appear because "he" is extracted.
+
+To correct this issue, we can make our regular expression more precise: (?<=\W|^)(he|his|him|they|them|theirs|ze|hir|hirs|she|hers|her)(?=\W|$)
+
+```{r}
+mtsamples$pronoun <- str_extract(
+  string  = tolower(mtsamples$transcription), 
+  pattern = "(?<=\\W|^)(he|his|him|they|them|theirs|ze|hir|hirs|she|hers|her)(?=\\W|$)"
+  )
+mtsamples$pronoun[1:10]
+
+table(mtsamples$pronoun, useNA = "always")
+```
+
+Regex Extract Text: Type of Cancer. Imagine you need to see the types of cancer mentioned in the data. Assume it is in the form of "Type Cancer," and we are interested in the word (type) before cancer.
+
+We can try to extract the phrase "[some word] cancer" using [[:alnum:]-_]{4,}\s*cancer
+
+```{r}
+mtsamples$cancer_type <- str_extract(tolower(mtsamples$keywords), "[[:alnum:]-_]{4,}\\s*cancer")
+table(mtsamples$cancer_type)
+```
+
+
+# Web Scraping
+Data scraping used for extracting data from wesites
+
+rvest R package provides various tools for reading and processing web data
+
+We'd like to capture the table of COVID-19 death rates per country directly from Wikipedia
+```{r}
+library(rvest)
+library(xml2)
+
+# Reading the HTML table with the function xml2::read_html
+covid <- read_html(
+  x = "https://en.wikipedia.org/wiki/COVID-19_pandemic_death_rates_by_country"
+  )
+
+# Let's look at the the output
+covid
+
+html_table(covid)[[2]]
+```
+
+We want to get the HTML table that shows up in the doc. So we use xm12::xml_find_all() and rvest::html_table()
+```{r}
+table <- xml_find_all(covid, xpath = '/html/body/div[3]/div/div[3]/main/div[3]/div[3]/div[1]/div[6]/table')
+print(table) # collection of tables in XML
+
+table <- html_table(table) 
+print(table) # list of tibbles
+
+table <- table[[1]]
+print(table) # hooray!
+```
+
