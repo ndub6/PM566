@@ -1,0 +1,74 @@
+---
+title: "Lab 7"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+```{r}
+library(httr)
+library(xml2)
+library(stringr)
+```
+
+# Question 1: How many Sars-Cov-2 papers?
+
+```{r}
+# Downloading the website
+website <- xml2::read_html("https://pubmed.ncbi.nlm.nih.gov/?term=sars-cov-2")
+
+# Finding the counts
+counts <- xml2::xml_find_first(website, xpath = "/html/body/main/div[9]/div[2]/div[2]/div[1]/div[1]/h3/span")
+
+# Turning it into text
+counts <- as.character(counts)
+
+# Extracting the data using regex
+totalcount <- stringr::str_extract(counts, "[0-9,.]+")
+
+# Removing any commas/dots so that we can convert to numeric
+totalcount <- gsub('[,.]', '', totalcount)
+
+totalcount <- as.numeric(totalcount)
+print(totalcount)
+```
+
+## Summary
+
+There are 278,150 papers about Sars-Cov-2.
+
+# Question 2: Get article abstracts and author
+
+```{r}
+# read in text, each line is a separate character
+abstracts <- readLines("C:/Users/nweit/Downloads/abstract-sars-cov-2-set.txt", warn = FALSE)
+# combine all text into one character
+abstracts <- paste(abstracts, collapse = '\n')
+# split the text whenever 3 new lines occur in a row (indicating two blank lines)
+abstracts <- unlist(strsplit(abstracts, split = '\n\n\n'))
+# replace any remaining "\n" symbols with spaces
+abstracts <- gsub("\n", " ", abstracts)
+# replace multiple spaces with single space
+abstracts <- gsub(" +", " ", abstracts)
+
+length(abstracts)
+
+head(abstracts)
+```
+
+# Question 3: Distribution of universities
+
+```{r}
+institution <- str_extract_all(
+  abstracts,
+  "\\b(?:(?:The\\s+)?University of(?:\\s+(?:[A-Z][A-Za-z.&'-]*|the|and|at)){1,7}|(?:[A-Z][A-Za-z.&'-]*\\s+){1,5}Institute of(?:\\s+(?:[A-Z][A-Za-z.&'-]*|the|and)){1,7}|(?:[A-Z][A-Za-z.&'-]*\\s+){1,5}University(?!\\s+of\\b))\\b"
+  ) 
+institution <- unlist(institution)
+table(institution)
+
+head(sort(table(institution), decreasing = TRUE), 10)
+```
+## Summary
+
+The 10 most common institutions, in order from most to least common are: University of California (4,183), Stanford University (1,165), University of Southern California (776), University of San Francisco (690), University of California- San Diego (667), University of Medical (382), University of Washington (330), Columbia University (272), University of California- Los Angeles (251), and John Hopkins University (246).

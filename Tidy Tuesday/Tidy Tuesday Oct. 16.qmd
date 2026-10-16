@@ -1,0 +1,40 @@
+---
+title: "Tidy Tuesday 10/16"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+```{r}
+dat <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2026/2026-10-13/frogs_and_toads_amphibiaweb.csv')
+```
+Which countries host the highest numbers of native frog/toad species?
+
+```{r}
+table(dat$isocc)
+
+dat$isocc
+
+countries <- sort(unique(unlist(strsplit(dat$isocc, split = ','))))
+countries <- countries[countries !=""]
+
+countries
+
+grep('AD', dat$isocc)
+
+counts <- sapply(countries, function(iso){length(grep(iso, dat$isocc))})
+
+
+barplot(counts, las = 2)
+
+library(ggplot2)
+
+world_map <- map_data("world")
+ggplot(data = world_map, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill = "gray",  color = "white")
+
+
+```
+
+
