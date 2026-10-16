@@ -53,22 +53,63 @@ abstracts <- gsub("\n", " ", abstracts)
 abstracts <- gsub(" +", " ", abstracts)
 
 length(abstracts)
-
-head(abstracts)
+head(abstracts,3)
 ```
 
 # Question 3: Distribution of universities
 
+What are the 10 most common institutions? Discuss how you could you improve these results.
+
 ```{r}
 institution <- str_extract_all(
   abstracts,
-  "\\b(?:(?:The\\s+)?University of(?:\\s+(?:[A-Z][A-Za-z.&'-]*|the|and|at)){1,7}|(?:[A-Z][A-Za-z.&'-]*\\s+){1,5}Institute of(?:\\s+(?:[A-Z][A-Za-z.&'-]*|the|and)){1,7}|(?:[A-Z][A-Za-z.&'-]*\\s+){1,5}University(?!\\s+of\\b))\\b"
+  "([A-Z][A-Za-z'-]* ){1,10}University|University of( [A-Z][A-Za-z'-]*){1,10}|([A-Z][A-Za-z'-]* ){1,10}Institute of( [A-Z][A-Za-z'-]*){1,10}"
   ) 
 institution <- unlist(institution)
 table(institution)
 
 head(sort(table(institution), decreasing = TRUE), 10)
 ```
+
 ## Summary
 
-The 10 most common institutions, in order from most to least common are: University of California (4,183), Stanford University (1,165), University of Southern California (776), University of San Francisco (690), University of California- San Diego (667), University of Medical (382), University of Washington (330), Columbia University (272), University of California- Los Angeles (251), and John Hopkins University (246).
+The 10 most common institutions, in order from most to least common are: University of California (4,358), Stanford University (1,171), University of Southern California (786), University of San Francisco (701), University of California San Diego (682), The University (398), University of Washington (338), Columbia University (274), University of California Los Angeles (254), and Johns Hopkins University (246). The results can be improved by expanding the list of terms to extract. This script returned "The University" in the top ten most common institutions, so modifying the regular expression to make "The" optional in the pattern would return a different school in place of "The University." Expanding the expression to include other names for institutions, such as "College," would also produce better results. Another way to improve the results would be to decide whether to combine or separate universities with similar names. For example, "University of California" may refer to UC Davis or UC Berkeley. As the third abstract above this code chunk shows, UC Davis is written as "University of California-Davis." From my understanding, the hyphen is not included in the regular expression, and operating on the assumption that UC Berkeley is written as "University of California-Berkeley," then the regular expression will combine the two schools as "University of California."
+
+# Question 4: Make a tidy dataset
+
+```{r}
+# read in text, each line is a separate character
+abstracts <- readLines("C:/Users/nweit/Downloads/abstract-sars-cov-2-set.txt", warn = FALSE)
+# combine all text into one character
+abstracts <- paste(abstracts, collapse = '\n')
+# split the text whenever 3 new lines occur in a row (indicating two blank lines)
+abstracts <- unlist(strsplit(abstracts, split = '\n\n\n'))
+
+# Extract the journal title for each article
+journal <- str_extract(abstracts, "(?<=\\. )[^\\n]+")
+
+# Extract the title of each article
+titles <- sapply(abstracts, function(x){
+  unlist(strsplit(x, split = "\n\n"))[2]
+}, USE.NAMES = FALSE)
+
+# Extract the authors of each article
+authors <- sapply(abstracts, function(x){
+  unlist(strsplit(x, split = "\n\n"))[3]
+}, USE.NAMES = FALSE)
+
+# Extract author affiliations for each abstract
+affiliations <- str_extract(abstracts, "(?<=\\n\\nAuthor information:\\n)[\\s\\S]*?(?=\\n\\n)")
+
+# Data Frame
+papers <- data.frame(
+  Journal = journal, 
+  Title = titles, 
+  Authors = authors, 
+  Affiliations = affiliations
+  )
+knitr::kable(papers[1:5, ], format = "html")
+
+```
+
+I added 'format = "html"' to knitr::kable(papers[1:5, ]) because the formatting was getting messed up when rendering. 
