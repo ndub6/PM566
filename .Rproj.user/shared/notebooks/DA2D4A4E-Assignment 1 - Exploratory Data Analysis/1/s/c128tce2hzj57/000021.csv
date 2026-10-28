@@ -1,0 +1,8 @@
+"0","'2022_Data' <- read.csv(""C:/Users/nweit/OneDrive/Desktop/PM566/Assignment 1 Data/2022 PM2.5 Data.csv"")"
+"0","dim(`2022_Data`)"
+"1","[1]"
+"1"," 59918"
+"1","    22"
+"1","
+"
+"0","head(`2022_Data`)"

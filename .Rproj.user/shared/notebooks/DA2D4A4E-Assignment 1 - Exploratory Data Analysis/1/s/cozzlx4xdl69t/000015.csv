@@ -1,0 +1,8 @@
+"0","Combined_Data <- merge(`2002_Data`, `2022_Data`, all = TRUE)"
+"0",""
+"0","Combined_Data$Date <- as.Date(Combined_Data$Date, format = ""%m/%d/%Y"")"
+"0","Combined_Data$Year <- format(Combined_Data$Date, ""%Y"")"
+"0",""
+"0","names(Combined_Data)[names(Combined_Data) == ""Daily.Mean.PM2.5.Concentration""] <- ""PM2.5"""
+"0",""
+"0","head(Combined_Data)"

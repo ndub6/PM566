@@ -1,0 +1,8 @@
+"0"," '2002_Data' <- read.csv(""C:/Users/nweit/OneDrive/Desktop/PM566/Assignment 1 Data/2002 PM2.5 Data.csv"")"
+"0","dim(`2002_Data`)"
+"1","[1]"
+"1"," 15976"
+"1","    22"
+"1","
+"
+"0","head(`2002_Data`)"

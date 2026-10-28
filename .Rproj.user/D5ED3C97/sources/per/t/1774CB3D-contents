@@ -1,0 +1,90 @@
+---
+title: "Assignment 1 - Exploratory Data Analysis"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+# Step 1
+
+```{r}
+ '2002_Data' <- read.csv("C:/Users/nweit/OneDrive/Desktop/PM566/Assignment 1 Data/2002 PM2.5 Data.csv")
+dim(`2002_Data`)
+head(`2002_Data`)
+tail(`2002_Data`)
+str(`2002_Data`)
+summary(`2002_Data`)
+
+'2002-DMPMC' <- `2002_Data`$Daily.Mean.PM2.5.Concentration
+hist(`2002-DMPMC`,
+     main = "Distribution of Daily Mean PM 2.5 Concentration (2002)",
+     xlab = "Daily Mean PM 2.5 Concentration (micrograms per cubic meter)")
+```
+
+```{r}
+'2022_Data' <- read.csv("C:/Users/nweit/OneDrive/Desktop/PM566/Assignment 1 Data/2022 PM2.5 Data.csv")
+dim(`2022_Data`)
+head(`2022_Data`)
+tail(`2022_Data`)
+str(`2022_Data`)
+summary(`2022_Data`)
+
+'2022-DMPMC' <- `2022_Data`$Daily.Mean.PM2.5.Concentration
+hist(`2022-DMPMC`,
+     main = "Distribution of Daily Mean PM 2.5 Concentration (2022)",
+     xlab = "Daily Mean PM 2.5 Concentration (micrograms per cubic meter)")
+```
+
+## Summary
+
+While both datasets contain 22 variables, the 2002 dataset contains 15,976 observations and the 2022 dataset contains 59,918 observations. In 2002, the daily mean PM2.5 Concentration has a range of 0 to 104.3. In 2022, the daily mean PM2.5 Concentration has a range of -6.7 to 302.5, which may suggest an recording error, as PM2.5 Concentration values cannot be negative. The distributions of Daily Mean PM 2.5 Concentration between the two datasets are extremely different. According to the histograms and table views, in 2002, the majority of observations (4,101 or 25.7% of observations) lie within the 5-10 micrograms per cubic meter range, with a smooth drop off as concentration increases. In 2022, almost all observations (56,593 or 94.5% of observations) lie within the 0-20 micrograms per cubic meter range, with just a couple observations near 300 micrograms per cubic meter, and 343 observations lying in the -20 - 0 micrograms per cubic meter range. Both distributions are positively skewed, but it should be noted that the 2002 distribution ranges from 0 - 100 micrograms per cubic meter and the 2022 distribution ranges from -20 - 300 micrograms per cubic meter (before dataset cleaning).
+
+# Step 2
+
+```{r}
+Combined_Data <- merge(`2002_Data`, `2022_Data`, all = TRUE)
+
+Combined_Data$Date <- as.Date(Combined_Data$Date, format = "%m/%d/%Y")
+Combined_Data$Year <- format(Combined_Data$Date, "%Y")
+
+names(Combined_Data)[names(Combined_Data) == "Daily.Mean.PM2.5.Concentration"] <- "PM2.5"
+
+head(Combined_Data)
+tail(Combined_Data)
+summary(Combined_Data)
+```
+
+# Step 3
+
+```{r}
+library(leaflet)
+
+# sites: data.frame with lat, lng, year (hundreds of rows)
+
+pal <- colorFactor(palette = c("#00FFFF", "#FF0000"), domain = Combined_Data$Year)
+
+leaflet(Combined_Data) |>
+  addTiles() |>
+  addCircleMarkers(
+    lng = Combined_Data$Site.Longitude, 
+    lat = Combined_Data$Site.Latitude, 
+    color = ~pal(Combined_Data$Year), 
+    radius = 5,
+    stroke = TRUE,
+    weight = 0.5,
+    fillOpacity = 0.5
+  ) |>
+  addLegend(
+    position = "bottomleft",
+    pal = pal,
+    values = Combined_Data$Year,
+    title = "Year",
+    opacity = 1
+  ) 
+```
+
+## Summary
+Based on the map, it appears that the distribution has expanded from 2002 to 2022. Some sites overlap, meaning that they exist in both years, but there are considerably more 2022 sites(red) than 2002 sites (blue). The "hotspots" appear to be Southern California, the Bay Area, and the Sacramento Area, while Northern California and Mojave are sparsely populated with sites. This makes sense given that the former locations are densely populated and the latter are not. 
+
+# Step 4
