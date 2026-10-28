@@ -1,0 +1,241 @@
+---
+title: "Week 8 Notes"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+# Efficiency and High Performance Computing
+
+# Efficiency
+
+## Loops
+
+Example: Square Roots
+```{r}
+
+# Using a for loop
+forLoopRoots <- function(n){
+  roots <- rep(NA, n)
+  for(i in 1:n){
+    roots[i] <- sqrt(i)
+  }
+  return(roots)
+}
+
+head(forLoopRoots(10000))
+
+# Using sapply
+SapplyRoots <- function(n){
+  roots <- sapply(1:n, sqrt)
+  return(roots)
+}
+
+head(SapplyRoots(10000))
+
+library(microbenchmark)
+microbenchmark(forLoopRoots(10000), SapplyRoots(10000))
+
+# Using vectorization to perform all calculations "at once"
+VectorizedRoots <- function(n){
+  sqrt(1:n)
+}
+
+head(VectorizedRoots(10000))
+microbenchmark(forLoopRoots(10000), VectorizedRoots(10000))
+
+# Anytime you can use vectorized computation, you should
+```
+
+## Pre-made functions
+
+Aim to write as little code as possible
+
+Example: Repeated Elements
+```{r}
+set.seed(1)
+vec <- sample(letters, 100, replace = TRUE)
+vec
+
+# Using two nested loops
+method1 <- function(x){
+  # first element cannot be a duplicate
+  out <- sapply(2:length(x), function(i){
+    matches <- sapply(1:(i-1), function(i2){
+      x[i2] == x[i]
+    })
+    return(any(matches))
+  })
+  out <- c(FALSE, out)
+  return(out)
+}
+
+vec[1:11]
+
+method1(vec)[1:11]
+
+# Loop and Vectorized Comparison
+method2 <- function(x){
+  # first element cannot be a duplicate
+  out <- sapply(2:length(x), function(i){
+    return(any(x[1:(i-1)] == x[i]))
+  })
+  out <- c(FALSE, out)
+  return(out)
+}
+
+method2(vec)[1:11]
+microbenchmark(method1(vec), method2(vec))
+
+# Base function: duplicated
+method3 <- function(x){
+  duplicated(x)
+}
+
+method3(vec)[1:11]
+microbenchmark(method2(vec), method3(vec))
+
+# Check to see if the methods all give the same output. If not, then the methods are not the same. Use this to check your optimized method.
+
+method2(vec) == method3(vec)
+method1(vec) == method2(vec)
+method1(vec) == method3(vec)
+```
+
+# High Performance Computing
+
+HPC can be:
+Parallel Computing - using multiple resources simultaneously to complete a task
+Big data working with large datasets
+
+Parallelization - take full advantage of computer by using all cores at the same time. Will reduced computation time.
+
+A function is parallelizable if each individual item does not depend on other elements. 
+
+
+Parallelization Packages: parallel, foreach, and future. Implicit parrelism are out-of-the-box tools that allow the programmer not to worry about parallelization. Because R is built in C, the packages Rcpp and OpenMP are also good. 
+
+The parallel package: explicit parallelism, parallel computing as multiple R sessions
+1. Create a PSOCK/FORK cluster using makePSOCKCluster/makeForkCluster
+2. Copy/prepare each R session (if using PSOCK cluster): copy objects with clusterExport, set a seed with clusterSetRNGStream
+3. Do your call: Pass expressions with clusterEvalQ, Run a parallelized loop with parApply, parLappy, etc.
+4. Stop the cluster with stopCluster
+
+## Example: Hello World!
+```{r}
+# 1. CREATING A CLUSTER
+library(parallel)
+cl <- makeCluster(4)    
+x  <- 20
+
+# 2. PREPARING THE CLUSTER
+clusterSetRNGStream(cl, 123) # Equivalent to `set.seed(123)` (not necessary for this example)
+clusterExport(cl, "x")
+
+# 3. DO YOUR CALL
+clusterEvalQ(cl, {
+  paste0("Hello from process #", Sys.getpid(), ". I see x and it is equal to ", x)
+})
+
+# 4. STOP THE CLUSTER
+stopCluster(cl)
+
+# Multi-core version of apply functions
+# 1. SETUP
+library(parallel)
+x  <- 20
+
+# 2. DO YOUR CALL
+mclapply(1:4, function(i){
+    paste0("Hello from process #", Sys.getpid(), ". I see x and it is equal to ", x)
+}, mc.cores = 4)
+```
+
+## Parallel Regression
+
+Run multiple regressions on a wide dataset 
+y=Xiβi+ε,ε∼N(0,σ2i),∀i
+
+```{r}
+# Serial Solution, use apply to solve it
+library(parallel)
+cl <- makeCluster(4L)
+clusterExport(cl, "y")
+ans <- parApply(
+  cl = cl,
+  X = X,
+  MARGIN = 2,
+  FUN = function(x) coef(lm(y ~ x))
+)
+ 
+ans[,1:5]
+
+microbenchmark::microbenchmark(
+  parallel = parApply(
+    cl = cl,
+    X = X, MARGIN = 2,
+    FUN = function(x) coef(lm(y ~ x))
+  ),
+  serial = apply(
+    X = X, MARGIN = 2,
+    FUN = function(x) coef(lm(y ~ x))
+  ), unit="relative"
+)
+```
+
+# Extended Example: SARS-CoV2 Simulation (an altered version of Conway's Game of Life)
+
+1. People live on a grid, each individual has 8 neighbors
+2. A helathy individual (A) interacting with a sick neighbor (B) has the probabilities: 100% if none wear a mask, 50% if A wears a mask, 20% if B wears a mask, and 5% if both wear a mask
+3. Infected individuals may die with probability 10%
+
+We are going to simulate a system with 2,500 (50 x 50) individuals, 1,000 times so we can analyze: (a) contagion curve, (b) death curve.
+
+```{r}
+# source("~/Downloads/sars-cov2.R", echo=FALSE)
+source("img/sars-cov2.R", echo = FALSE)
+
+# Looking at some constants
+probs_sick # Sick individual's probabilities
+
+set.seed(7123)
+one <- simulate_covid(
+    pop_size = 1600,
+    nsick = 160,
+    nwears_mask = 1:400,
+    nsteps = 20,
+    store = TRUE
+)
+
+one$statistics[c(1:5, 16:20),]
+
+# Location of who wears the facemask. This step is only for plotting
+wears <- which(one$wears, arr.ind = TRUE) - 1
+wears <- wears/(one$nr) * (1 + 1/one$nr)
+
+# Initializing the animation
+fig   <- magick::image_device(600, 600, res = 96/2, pointsize = 24)
+for (i in 1:one$current_step) {
+  
+  # Plot
+  image(
+    one$temporal[,,i], col=c("gray", "tomato", "steelblue","black"),
+    main = paste("Time", i - 1L, "of", one$nsteps),
+    zlim = c(1,4)
+    )
+  points(wears, col="white", pch=20, cex=1.5)
+  legend(
+    "topright",
+    col = c("gray", "tomato", "steelblue","black", "black"),
+    legend = c(names(codes), "wears a mask"),
+    pch = c(rep(15, 4), 21)
+  )
+}
+
+# Finalizing plot and writing the animation
+dev.off()
+animation <- magick::image_animate(fig, fps = 2)
+magick::image_write(animation, "covid1.gif")
+```
+

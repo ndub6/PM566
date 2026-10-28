@@ -1,0 +1,256 @@
+---
+title: "SQL Notes"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+Database - a set of related information (ex. phone book, dictionary, cookbook)
+
+Order/Indexing Matters
+The ordering of entries will make tasks easier
+
+Relation between Tables
+Entity - something of itnerest
+Result Key - name for a non-persitent table, result of SQL query
+Primary Key - one or more columns that can be used as a unique identifer for each row
+Foreign Key - one or more columns that can be used to identify a single row in another table
+
+SQL - a langauge created to manipulate relational databases
+
+SQLite interfeaces with R nicely
+Select - determines which columns to include the query's result set
+From - identifies that tables from which to retrieve data and how tables should be joined
+Where - filters out unwanted data
+Group By - used to group rows together by common column values
+Having - filters out unwanted groups
+Order By - sorts the rows of the final result set by one or more columns
+
+# Penguins Data
+```{r}
+head(as.data.frame(palmerpenguins::penguins))
+
+# Select Clause
+SELECT species, island, bill_length_mm
+FROM penguins
+
+# OR
+# SELECT *
+# FROM penguins
+
+# Select Clause - Aliases
+SELECT upper(island) AS island,
+  bill_length_mm * bill_depth_mm AS bill_area_mm2
+FROM penguins
+
+# Select Clause - Removing Duplicates
+SELECT DISTINCT island, species
+FROM penguins
+
+# From Clause - Subquery
+SELECT a.bill_length_mm, a.bill_depth_mm
+FROM
+  (SELECT species, bill_length_mm, bill_depth_mm
+   FROM penguins
+   WHERE species = 'Adelie'
+  ) AS a
+
+# Where Clause
+SELECT species, island, bill_length_mm, bill_length_mm, year
+FROM penguins
+WHERE year = 2007
+
+SELECT species, island, bill_length_mm, bill_length_mm, year
+FROM penguins
+WHERE year > 2007
+
+SELECT species, island, bill_length_mm, bill_length_mm, year
+FROM penguins
+WHERE year IN (2007, 2008)
+
+SELECT species, island, bill_length_mm, bill_length_mm, year
+FROM penguins
+WHERE year = 2007 AND species = 'Gentoo'
+
+SELECT species, island, bill_length_mm, bill_length_mm, year
+FROM penguins
+WHERE year = 2007 OR species = 'Gentoo'
+
+# Order By Clause
+SELECT species, island, bill_length_mm, bill_depth_mm
+FROM penguins
+ORDER BY bill_length_mm
+
+SELECT species, island, bill_length_mm, bill_depth_mm
+FROM penguins
+ORDER BY bill_length_mm DESC
+
+SELECT species, island, bill_length_mm, bill_depth_mm
+FROM penguins
+ORDER BY bill_length_mm ASC
+
+SELECT species, island, bill_length_mm, bill_depth_mm
+FROM penguins
+ORDER BY bill_length_mm, bill_depth_mm
+
+# Group By Clause - assumes to ignore missing values, will not return "NA" like R does.
+SELECT 
+  AVG(bill_length_mm) AS avg_bill_length, 
+  AVG(bill_depth_mm) AS avg_bill_depth
+FROM penguins
+
+SELECT island,
+  AVG(bill_length_mm) AS avg_bill_length, 
+  AVG(bill_depth_mm) AS avg_bill_depth
+FROM penguins
+GROUP BY island
+
+SELECT island, species,
+  AVG(bill_length_mm) AS avg_bill_length, 
+  AVG(bill_depth_mm) AS avg_bill_depth
+FROM penguins
+GROUP BY island, species
+
+# Group By Clause - Count
+SELECT island, species,
+  COUNT(*) AS count
+FROM penguins
+GROUP BY island, species
+
+SELECT island, species,
+  COUNT(*) AS count
+FROM penguins
+GROUP BY island, species
+HAVING COUNT(*) < 100
+```
+
+SQL Joins
+(INNER) JOIN - returns records that have matching values in both tables
+LEFT (OUTER) JOIN - reutrns all records from the left table, and the matched records from the right table
+RIGHT (OUTER) JOIN - reutrns all records from the right table, and the matched records from the left table
+FULL (OUTER) JOIN - reutnrs all records when there is a match in either left or right table
+
+```{r}
+# Inner Join
+merge(x, y, all.x = FALSE, all.y = FALSE)
+
+# Left Join
+merge(x, y, all.x = TRUE, all.y = FALSE)
+
+# Right Join
+merge(x, y, all.x = FALSE, all.y = TRUE)
+
+# Full Outer Join
+merge(x, y, all.x = TRUE, all.y = TRUE)
+```
+
+SQL Joins with CHS Data
+```{r}
+# Download
+chs_regional   <- read.csv("https://github.com/USCbiostats/data-science-data/raw/master/01_chs/chs_regional.csv")
+chs_individual <- read.csv("https://github.com/USCbiostats/data-science-data/raw/master/01_chs/chs_individual.csv")
+
+# Dropping some regions
+chs_regional   <- subset(chs_regional, !townname %in% c("Alpine", "Lompoc"))
+chs_individual <- subset(chs_individual, townname != "Lancaster")
+
+# Data Intro: Individual
+head(chs_individual)
+dim(chs_individual)
+unique(chs_individual$townname)
+```
+```{r}
+# Set up SQL Database
+# Set up the dataset
+library(RSQLite)
+con <- dbConnect(SQLite(), ":memory:")
+dbWriteTable(con, "regional", chs_regional)
+dbWriteTable(con, "individual", chs_individual)
+
+# SQL INNER Join
+ans <- dbGetQuery(con,
+  "SELECT *
+  FROM regional AS a INNER JOIN individual AS b 
+  ON a.townname = b.townname
+  ")
+nrow(ans)
+
+# SQL LEFT Join
+ans <- dbGetQuery(con,
+  "SELECT *
+  FROM regional AS a LEFT JOIN individual AS b 
+  ON a.townname = b.townname")
+nrow(ans)
+
+# SQL RIGHT Join
+ans <- dbGetQuery(con,
+  "SELECT * /* RIGHT joins are not supported by SQLite*/
+  FROM individual AS a LEFT JOIN regional AS b 
+  ON a.townname = b.townname")
+nrow(ans)
+
+# SQL FULL Join
+ans <- dbGetQuery(con,
+  "SELECT *
+  FROM individual AS a FULL JOIN regional AS b 
+  ON a.townname = b.townname")
+nrow(ans)
+
+# Disconnect Database
+dbDisconnect(con)
+```
+
+What happens when there are no matching records
+```{r}
+# First, break things
+chs_individual2 <- subset(
+  chs_individual, !(townname %in% chs_regional$townname)
+)
+
+unique(chs_individual2$townname)
+chs_regional$townname
+
+# Second, Rebuild the Database
+con <- dbConnect(SQLite(), ":memory:")
+dbWriteTable(con, "regional", chs_regional)
+dbWriteTable(con, "individual", chs_individual2)
+
+# Re-Run FULL Join
+ans <- dbGetQuery(con,
+  "SELECT *
+  FROM individual AS a FULL JOIN regional AS b 
+  ON a.townname = b.townname")
+nrow(ans)
+dbDisconnect(con)
+```
+
+What happens when we have multiple matching records in both tables?
+```{r}
+con <- dbConnect(SQLite(), ":memory:")
+dbWriteTable(con, "regional_dpl", rbind(chs_regional, chs_regional))
+
+nrow(rbind(chs_regional, chs_regional))
+
+# Join with Duplicates
+ans <- dbGetQuery(con,
+  "SELECT *
+  FROM regional_dpl AS a FULL JOIN regional_dpl AS b 
+  ON a.townname = b.townname")
+nrow(ans)
+
+ans <- dbGetQuery(con,
+  "SELECT * FROM regional_dpl AS a INNER JOIN regional_dpl AS b 
+    ON a.townname = b.townname
+  ")
+nrow(ans)
+
+# Distinct Entries
+ans <- dbGetQuery(con,
+  "SELECT DISTINCT * FROM regional_dpl AS a INNER JOIN regional_dpl AS b 
+    ON a.townname = b.townname
+  ")
+nrow(ans)
+dbDisconnect(con)
+```
+
