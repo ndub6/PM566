@@ -17,8 +17,8 @@ library(textdata)
 abstracts <- read.csv("C:/Users/nweit/Downloads/pubmed.csv")
 ```
 
-
 # Question 1
+
 How many abstracts are associated with each search term? Tokenize the abstracts and count the number of each token. Do you see anything interesting? What are the 5 most common tokens for each search term?
 
 ```{r}
@@ -53,9 +53,10 @@ kable(Top_Five_per_Term, caption = "Top 5 Most Common Tokens for Each Term", col
 
 ## Summary
 
-There are 981 abstracts associated with "Covid," 376 with "Cystic Fibrosis," 317 with "Meningitis," 780 with "Preeclampsia," and 787 with "Prostate Cancer." This information can be found when viewing the "abstracts" data set and looking at the "term" count in the summary tab. After tokenizing the abstracts and counting the number of each token, the top ten most common tokens across all terms were primarily stop words like "the" and "and." "Covid" and "19" were the 8th and 9th most common tokens, respectively. This makes some sense, as the term "covid" had the most abstracts associated with it, so "covid" and "19" would be more likely to appear more often than words assocatied with the other terms. However, tokenization may have split these words, as they usaully are hyphenated. The five most common token for each search term are listed in the third table, however, a majority of them are stopwords. 
+There are 981 abstracts associated with "Covid," 376 with "Cystic Fibrosis," 317 with "Meningitis," 780 with "Preeclampsia," and 787 with "Prostate Cancer." This information can be found when viewing the "abstracts" data set and looking at the "term" count in the summary tab. After tokenizing the abstracts and counting the number of each token, the top ten most common tokens across all terms were primarily stop words like "the" and "and." "Covid" and "19" were the 8th and 9th most common tokens, respectively. This makes some sense, as the term "covid" had the most abstracts associated with it, so "covid" and "19" would be more likely to appear more often than words associated with the other terms. However, tokenization may have split these words, as they usually are hyphenated. The five most common token for each search term are listed in the third table, however, a majority of them are stop words.
 
 # Question 2
+
 Does removing stop words change what tokens appear as the most frequent? What are the 5 most common tokens for each search term after removing stop words?
 
 ```{r}
@@ -88,9 +89,10 @@ kable(Top_Five_per_Term_No_Stop, caption = "Top 5 Most Common Tokens for Each Te
 
 ## Summary
 
-Yes, removing stop words does change what tokens appear as the most frequent, as evident in the first table showing the top ten most common tokens after removing stop words. The second table shows the five msot common tokens for each term after removing stop words. This list provides more context for what each term is about, but suggests that tokenization split some hyphenated words apart, like "covid" and "19" and "pre" and "eclampsia."
+Yes, removing stop words does change what tokens appear as the most frequent, as evident in the first table showing the top ten most common tokens after removing stop words. The second table shows the five most common tokens for each term after removing stop words. This list provides more context for what each term is about, but suggests that tokenization split some hyphenated words apart, like "covid" and "19" and "pre" and "eclampsia."
 
 # Question 3
+
 Tokenize the abstracts into bigrams. Find the 10 most common bigrams and visualize them.
 
 ```{r}
@@ -114,7 +116,8 @@ ggplot(Top_Ten_Bigrams, aes(x= n, y = reorder(ngram, n))) +
 
 The ten most common bigrams, in order, are "covid 19," "of the," "in the," "prostate cancer," "pre eclampsia," "of covid," "and the," "to the," and "of prostate."
 
-# Quesiton 4
+# Question 4
+
 Calculate the TF-IDF value for each word-search term combination (here you want the search term to be the “document”). What are the 5 tokens from each search term with the highest TF-IDF value? How are the results different from the answers you got in Question 1?
 
 ```{r}
@@ -136,9 +139,10 @@ kable(Top_Five_TFIDF, caption = "Top Five Tokens with the Highest TF-IDF for Eac
 
 ## Summary
 
-The top five tokens from each term with the highest TF-IDF values are listed in the table above. Of note, TF-IDF values were calculated without removing stop words, as they were not removed in Question 1. Compared to the results from Question 1, the results in this question differ for all the terms, as none of the stop words appear in the top five.  
+The top five tokens from each term with the highest TF-IDF values are listed in the table above. Of note, TF-IDF values were calculated without removing stop words, as they were not removed in Question 1. Compared to the results from Question 1, the results in this question differ for all the terms, as none of the stop words appear in the top five.
 
 # Question 5
+
 Perform a sentiment analysis using the NRC lexicon. What is the most common sentiment for each search term? What if you remove "positive" and "negative" from the list?
 
 ```{r warning = FALSE}
@@ -172,11 +176,12 @@ Adjusted_Common_Sentiment <- Adjusted_Sentimnet_Count |>
 kable(Adjusted_Common_Sentiment, caption = "Most Common Sentiment for Each Term After Removing 'Positive' and 'Negative'", col.names = c("Term", "Sentiment", "Number"))
 ```
 
-## Summary 
+## Summary
 
 Before removing "positive" and "negative," the most common sentiment for the terms "covid", "cystic fibrosis," and "preeclampsia" were "positive," while the terms "meningitis" and "prostate cancer" were "negative." After removing "positive" and "negative," the most common sentiment for the terms "covid," "meningitis," and "prostate cancer" were "fear," while "cystic fibrosis" was "disgust" and "preeclampsia" was "anticipation."
 
 # Question 6
+
 Now perform a sentiment analysis using the AFINN lexicon to get an average positivity score for each abstract (hint: you may want to create a variable that indexes, or counts, the abstracts). Create a visualization that shows these scores grouped by search term. Are any search terms noticeably different from the others?
 
 ```{r}
@@ -198,4 +203,4 @@ ggplot(Avg_Positivity_Score, aes(x = term, y = average, fill = term)) +
 
 ## Summary
 
-The overlap of the distributions suggests that the terms are similar to each other and not noticeably different. However, the median AFINN score for "cystic fibrosis" is higher than that of the other terms, meaning that abstracts under this term tend to use more positive language than abstracts of other terms.  
+The overlap of the distributions suggests that the terms are similar to each other and not noticeably different. However, the median AFINN score for "cystic fibrosis" is higher than that of the other terms, meaning that abstracts under this term tend to use more positive language than abstracts of other terms.
