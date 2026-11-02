@@ -114,7 +114,7 @@ ggplot(Top_Ten_Bigrams, aes(x= n, y = reorder(ngram, n))) +
 
 ## Summary
 
-The ten most common bigrams, in order, are "covid 19," "of the," "in the," "prostate cancer," "pre eclampsia," "of covid," "and the," "to the," and "of prostate."
+The ten most common bigrams, in order, are "covid 19," "of the," "in the," "prostate cancer," "pre eclampsia," "patients with," "of covid," "and the," "to the," and "of prostate."
 
 # Question 4
 
@@ -139,7 +139,7 @@ kable(Top_Five_TFIDF, caption = "Top Five Tokens with the Highest TF-IDF for Eac
 
 ## Summary
 
-The top five tokens from each term with the highest TF-IDF values are listed in the table above. Of note, TF-IDF values were calculated without removing stop words, as they were not removed in Question 1. Compared to the results from Question 1, the results in this question differ for all the terms, as none of the stop words appear in the top five.
+The top five tokens from each term with the highest TF-IDF values are listed in the table above. Of note, TF-IDF values were calculated without removing stop words, as they were not removed in Question 1, however, TF-IDF down weights stop words, so they shouldn't appear in this table. Compared to the results from Question 1, the results of this question differ for all the terms, as none of the stop words appear in the top five.
 
 # Question 5
 
@@ -167,7 +167,7 @@ Adjusted_Sentiment_Count <- Sentiment_Count |>
   filter(!sentiment %in% c("positive", "negative"))
 
 # Most Common Sentiment for Each Term
-Adjusted_Common_Sentiment <- Adjusted_Sentimnet_Count |>
+Adjusted_Common_Sentiment <- Adjusted_Sentiment_Count |>
   group_by(term) |>
   top_n(1,n) |>
   arrange(term, desc(n)) |>
@@ -188,7 +188,7 @@ Now perform a sentiment analysis using the AFINN lexicon to get an average posit
 Indexed_Abstracts <- abstracts |>
   mutate(abstracts_id = row_number())
 
-# Average Postivity Score for Each Abstract
+# Average Positivity Score for Each Abstract
 Avg_Positivity_Score <- Indexed_Abstracts |>
   unnest_tokens(word, abstract) |>
   inner_join(get_sentiments("afinn"), by = "word") |>
