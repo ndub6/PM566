@@ -1,0 +1,272 @@
+---
+title: "Interactive Visualization"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+# Interactive Visualization for Communication
+
+Edgar Dale's Cone of Experience
+
+People remember 10% of what they read, 20% of what they hear, 30% of what they see, 50% of what they see and hear, 70% of what they say and write, 90% of what they do. Engagment with information has been shown to improve the ability to retain information
+
+- Interactive Plots (plotly)
+- Interactive Maps (plotly, Leaflet)
+- Interactive Tables (DT)
+- Dashboards (flexdashboard)
+- Interactive applications (shiny)
+- Websites (Quarto, R Markdown, blogdown, Hugo, Jeckyll)
+
+Interactivity allows users to engage with data in a way static visuals cannot: identify, isolate, visualize, zoom, highlight, filter, animate, change parameters
+
+Interactive Visualization helps with both exploration and communication 
+
+Import-> Tidy -> Transform/Visualize/Model -> Communicate
+
+Aids exploratory data analysis by:
+1. Investigating faster, identifying relationships or structure that would go missing, understand problems with data, models, or algorithms. 
+2. Automating and efficiently sharing multiple dimensions of data/models/findings or complex analysis tasks
+3. Helps users better undersantd and make decisions on data/models/findings
+4. Tell a interesting or engaging story, presenting multple viewpoints
+5. Allows users to focus on the aspects most important to them, making it more likely to understand, learn from, remember, and appreciate the data
+
+# Plotly
+
+Create and share interactive graphs
+You can create a plotly object in two ways:
+1. Transform a ggplot2 object into a plotly object (ggplotly())
+2. Intialize a plotly object with plot_ly()/plot_geo()/plot_mapbox()
+
+## ggplotly()
+```{r}
+p <- ggplot(*) + geom_*()
+ggplotly(p)
+```
+Creates a graph and assigns it to a variable
+
+```{r}
+library(plotly)
+```
+
+## Example 1: New York Times Covid-19 Data
+
+```{r}
+# import data
+
+cv_states <- read.csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+
+# format the date
+cv_states$date <- as.Date(cv_states$date, format="%Y-%m-%d")
+
+# create most recent day data frame
+cv_states_today <- subset(cv_states, date==max(cv_states$date))
+
+# inspect the data
+str(cv_states)
+dim(cv_states)
+summary(cv_states)
+
+# Scatterplot
+cv_states_today |> 
+           plot_ly(x = ~cases, y = ~deaths, 
+                   type = 'scatter',
+                   mode = 'markers',
+                   color = ~state,
+                   colors = "Blues")
+```
+
+```{r}
+cv_states_today |> 
+           plot_ly(x = ~cases, y = ~deaths, 
+                   type = 'scatter',
+                   mode = 'markers',
+                   color = ~state,
+                   sizes = c(5, 70),
+                   marker = list(sizemode='diameter', opacity=0.5))
+```
+
+```{r}
+cv_states_today |> 
+  plot_ly(x = ~cases, y = ~deaths, 
+          type = 'scatter', mode = 'markers', color = ~state,
+          size = ~fips, sizes = c(5, 70), marker = list(sizemode='diameter', opacity=0.5),
+          hoverinfo = 'text',
+          text = ~paste( paste(state, ":", sep=""),
+                         paste(" Cases per 100k: ", cases, sep="") ,
+                         paste(" Deaths per 100k: ", deaths, sep=""),
+                         paste(" CFR (%): ", fips,sep=""),
+                         sep = "<br>")) 
+```
+
+```{r}
+cv_states_today |> 
+  plot_ly(x = ~cases, y = ~deaths, z = ~state,
+          type = 'scatter3d', mode = 'markers', color = ~state,
+          size = ~fips, sizes = c(5, 70), marker = list(sizemode='diameter', opacity=0.5),
+          hoverinfo = 'text',
+          text = ~paste( paste(state, ":", sep=""), 
+                    paste(" Cases per 100k: ", cases, sep="") ,
+              paste(" Deaths per 100k: ", deaths, sep=""),
+              paste(" CFR (%): ", deaths,sep=""), 
+              sep = "<br>")) |> 
+  layout(title = "Cases, Deaths, and Naive Case Fatality Rate for US States",
+          yaxis = list(title = "Cases"), 
+          xaxis = list(title = "Deaths"),
+         hovermode = "compare")
+```
+
+Hover Information
+can specify what info will appear when hovering using hoverinfo through the text argument
+
+Layout
+specify chart labels through layout()
+hovermode = "compare" allows comparing multiple points
+
+3D Scatterplot
+Can add a 3rd dimension using type = 'scatter3d', define the dimension as z
+
+## Scatterplot with ggplotly()
+
+Create a scatterplot with ggplotly() with 1 additional line of code --> allows taking advantage of geom_smooth
+
+```{r}
+library(ggplot2)
+p <- ggplot(cv_states_today, aes(x=cases, y=deaths, size=fips)) + 
+          geom_point() + geom_smooth()
+ggplotly(p)
+```
+
+Add annotations to the plot
+```{r}
+p <- ggplot(cv_states_today, aes(x=cases, y=deaths, size=fips)) + 
+  geom_point() + 
+  geom_smooth() +
+  annotate("text", 
+           x = max(cv_states_today$cases),
+           y = max(cv_states_today$deaths),
+           label = paste('Cor =', cor(cv_states_today$cases, cv_states_today$deaths)))
+fig <- ggplotly(p)
+```
+
+Line Graph
+```{r}
+cv_states |> 
+plot_ly(x = ~date, y = ~deaths, color = ~state, type = "scatter", mode = "lines",
+        hoverinfo = 'text',
+        text = ~paste(paste(state, ":", sep=""), 
+                  paste("Date: ", date, sep=""),
+                  paste(" Deaths (total): ", deaths, sep=""), 
+                  paste(" Deaths per 100k: ",  deaths, sep=""), sep = "<br>"))
+```
+
+Line Graph: ggplotly()
+```{r}
+g1 = plot_ly(cv_states, x = ~date, y = ~deaths, color = ~state, type = "scatter", mode = "lines")
+g2 = ggplot(cv_states, aes(x = date, y = cases, color = state)) + geom_line() + geom_point(size = .5, alpha = 0.5)
+g2_plotly <- ggplotly(g2)
+subplot(g1, g2_plotly)
+```
+
+Specifying text with ggplotly()
+```{r}
+g1 = ggplot(cv_states, aes(x = date, y = cases, color = state, 
+              text=paste(paste(state, ":", sep=""), 
+                         paste("Date: ", date, sep=""),
+                    paste(" Cases (total): ", cases, sep=""),
+                      sep = "<br>") )) + 
+          geom_line() + geom_point(size = .5, alpha = 0.5) 
+ggplotly(g1, tooltip = "text")
+```
+
+Histograms
+```{r}
+g1 <- cv_states_today |> 
+  plot_ly(x = ~deaths, type = "histogram", xbins = list(size = 1, end=30 ))
+g2 <- cv_states_today |> ggplot( aes(x=deaths)) + geom_histogram(binwidth=1)
+g2_plotly <- ggplotly(g2)
+subplot(g1, g2_plotly)
+```
+
+Heatmap
+Useful for displaying three dimensional data in two dimensions, using color for the third dimension
+
+```{r}
+library(tidyr)
+cv_states_mat <- cv_states |> 
+            select(state, date, deaths) |> 
+            filter(date>"2020-03-31") |> 
+            filter(deaths < 10)
+cv_states_mat2 <- as.data.frame(pivot_wider(cv_states_mat,
+                                            names_from = state,
+                                            values_from = deaths))
+rownames(cv_states_mat2) <- cv_states_mat2$date
+cv_states_mat2$date <- NULL
+head(cv_states_mat2)
+
+data <- as.matrix(cv_states_mat2)
+
+plot_ly(x=colnames(data), y=rownames(data),
+             z=~data,
+             type="heatmap",
+             showscale=T)
+
+# 3D Surface using type = "surface"
+plot_ly(x=colnames(cv_states_mat2), y=rownames(cv_states_mat2),
+             z=~cv_states_mat2,
+             type="surface",
+             showscale=F)
+```
+
+Choropleth Maps
+Illustrate data across geographic ares by shading regions with different colors
+
+```{r}
+library(dplyr)
+cv_CFR <- cv_states_today |> select(state, fips) # select data
+
+# Get state abbreviations and map to state names
+st_crosswalk <- tibble(state = state.name) |>
+   bind_cols(tibble(abb = state.abb)) |> 
+   bind_rows(tibble(state = "District of Columbia", abb = "DC"))
+cv_CFR2 <- left_join(cv_CFR, st_crosswalk, by = "state")
+cv_CFR2$state.name <- cv_CFR2$state
+cv_CFR2$state <- cv_CFR2$abb
+cv_CFR2$abb <- NULL
+
+# Create hover text
+cv_CFR2$hover <- with(cv_CFR, paste(state.name, '<br>', "CFR:", fips))
+
+# Set up mapping details
+set_map_details <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+)
+
+# Create the map
+fig <- plot_geo(cv_CFR2, locationmode = 'USA-states') |> 
+  add_trace(
+    z = ~fips, 
+    text = ~hover, 
+    locations = ~state,
+    color = ~fips, 
+    colors = 'Blues'
+  )
+fig <- fig |> colorbar(title = "CFR")
+fig <- fig |> layout(
+    title = paste('CFR by State as of', Sys.Date(), '<br>(Hover for value)'),
+    geo = set_map_details
+  )
+fig
+```
+
+# Interactive Tables
+```{r}
+library(DT)
+cv_california <- cv_states |> filter(state=="California") |> select(date,cases,deaths,fips)
+datatable(cv_california)
+```
+
