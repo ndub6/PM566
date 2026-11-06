@@ -25,7 +25,7 @@ library(knitr)
 opts_chunk$set(
   warning = FALSE,
   message = FALSE,
-  eval=FALSE, ### SET THIS TO TRUE TO RUN ALL CODE ###
+  eval=TRUE, ### SET THIS TO TRUE TO RUN ALL CODE ###
   echo = TRUE,
   cache=FALSE,
   include=TRUE,
@@ -208,8 +208,6 @@ p2 <- ggplot(cv_states, aes(x = date, y = new_deaths, color = state)) + geom_lin
 ggplotly(p2)
 ```
 
-#### Summary
-Which states and which dates have strange values?
 
 
 
@@ -324,6 +322,9 @@ cv_states |> filter(state=="Florida") |>
   add_trace(x = ~date, y = ~new_deaths, type = "scatter", mode = "lines") 
 ```
 
+#### Summary
+
+According to the line chart, there were no new deaths in Florida. However, there was a peak of 84.669k new cases on January 10th, 2022.
 
 ### 9. Heatmaps
 
@@ -469,4 +470,4 @@ subplot(fig_pick.date, fig_Today, nrows = 2, margin = .05)
 
 #### Summary
 
-The CFR for October 15, 2021 stood out in Alaska, Idaho, Montana, Wyoming, North Dakota, Minnesota, West Virginia. The CFR for Novemeber 5, 2026 is relatively low.
+The CFR for October 15, 2021 had multiple states with double-digit CFR values. As of November 6, 2026, most state has CFR values of less than 10, with Louisiana, Nebraska, and South Dakota being the exceptions.
