@@ -1,0 +1,201 @@
+---
+title: "Assignment 4"
+author: "Nathan Weitershausen"
+format: html
+editor: visual
+embed-resources: true
+---
+
+# HPC
+
+```{r}
+library(microbenchmark)
+
+# Use the functions with this data
+set.seed(2315)
+dat <- matrix(rnorm(200 * 100), nrow = 200)
+```
+
+
+## Question 1
+fun1: Find the total for each row of a numeric matrix. Output should be a vector with length equal to the number of rows of the input matrix.
+
+```{r}
+# Total for each row
+fun1 <- function(mat) {
+  n <- nrow(mat)
+  ans <- double(n) 
+  for (i in 1:n) {
+    ans[i] <- sum(mat[i, ])
+  }
+  ans
+}
+
+fun1alt <- function(mat) {
+  rowSums(mat)
+}
+
+all.equal(fun1(dat), fun1alt(dat))
+microbenchmark(fun1(dat), fun1alt(dat))
+```
+
+## Question 2
+fun2: Calculate the running (cumulative) total along each row of a numeric matrix. Output should be a matrix with dimensions equal to the input matrix.
+
+```{r}
+# running cumulative sum by row
+fun2 <- function(mat) {
+  n <- nrow(mat)
+  k <- ncol(mat)
+  ans <- mat
+  for (i in 1:n) {
+    for (j in 2:k) {
+      ans[i,j] <- mat[i, j] + ans[i, j - 1]
+    }
+  }
+  ans
+}
+
+fun2alt <- function(mat) {
+  t(apply(mat, 1, cumsum))
+}
+
+all.equal(fun2(dat), fun2alt(dat))
+
+microbenchmark(fun2(dat), fun2alt(dat))
+```
+
+## Question 3
+
+For this question, we will ask you to parallelize a process for computationally estimating the value of pi.
+
+The following function allows us to estimate pi through a simple simulation:
+```{r}
+library(parallel)
+library(ggplot2)
+
+sim_pi <- function(n = 1000, i = NULL) {
+  p <- matrix(runif(n*2), ncol = 2)
+  mean(rowSums(p^2) < 1) * 4
+}
+
+# Here is an example of the run
+set.seed(156)
+sim_pi(1000) # 3.132
+```
+In order to get more accurate estimates, we can run this function multiple times and take the mean:
+```{r}
+# This runs the simulation a 4,000 times, each with 10,000 points
+set.seed(1231)
+system.time({
+  ans <- unlist(lapply(1:4000, sim_pi, n = 10000))
+  print(mean(ans))
+})
+```
+Rewrite the previous code using parLapply() (or your parallelization method of choice) to parallelize it. Run the code once, using system.time(), to show that your version is faster.
+```{r}
+
+set.seed(1231)
+Original <- system.time({
+  ans_original <- unlist(lapply(1:4000, sim_pi, n = 10000))
+  print(mean(ans))
+})
+
+Parallel <- system.time({
+  cl <- makeCluster(2L)
+  clusterSetRNGStream(cl,iseed = 1231)
+  ans_parallel <- unlist(parLapply(cl, 1:4000, sim_pi, n = 10000))
+  print(mean(ans))
+  stopCluster(cl)
+})
+```
+Visualize your results in two ways:
+
+1. Show that both versions produce similar ranges of estimates for pi.
+2. Show that the parallel version runs faster.
+
+```{r}
+# Show that both versions produce similar ranges of estimates for pi.
+Pi_Estimates <- data.frame(Method = rep(c("Original", "Parallel"), c(length(ans_original), length(ans_parallel))), Estimate = c(ans_original, ans_parallel))
+
+ggplot(Pi_Estimates, aes(x= Method, y = Estimate, fill = Method)) + geom_boxplot() + labs(title = "Distribution of Simulated Pi Estimates", y = "Estimated pi") + geom_hline(yintercept = pi)
+
+# Show that the parallel version runs faster.
+Timing <- data.frame(Method = c("Original", "Parallel"), Seconds = c(Original[["elapsed"]], Parallel[["elapsed"]]))
+
+ggplot(Timing, aes(x=Method, y = Seconds, fill = Method))+ geom_col(width = 0.6) + labs(title = "Runtime Comparison", y = "Elapsed Time (seconds)")
+
+```
+
+# SQL
+
+Setup a temporary database of movie data by running the following code chunk:
+```{r}
+# install.packages(c("RSQLite", "DBI"))
+
+library(RSQLite)
+library(DBI)
+
+# Initialize a temporary in memory database
+con <- dbConnect(SQLite(), ":memory:")
+
+# Download tables
+film <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/film.csv")
+film_category <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/film_category.csv")
+category <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/category.csv")
+
+# Copy data.frames to database
+dbWriteTable(con, "film", film)
+dbWriteTable(con, "film_category", film_category)
+dbWriteTable(con, "category", category)
+```
+
+## Question 4
+
+How many movies are available in each rating category?
+
+```{sql connection=con}
+SELECT rating, COUNT(*) AS number_of_movies
+FROM film
+GROUP BY rating
+ORDER BY rating
+```
+
+## Question 5
+
+What is the average replacement cost and rental rate for each rating category?
+
+```{sql connection= con}
+SELECT rating, AVG(replacement_cost) AS avg_replacement_cost, AVG(rental_rate) AS avg_rental_rate
+FROM film
+GROUP BY rating
+ORDER BY rating
+```
+
+## Question 6
+
+Use table film_category together with film to find how many films there are with each category ID.
+
+```{sql connection=con}
+SELECT film_category.category_id, COUNT(*) AS number_of_films
+FROM film
+INNER JOIN film_category
+ON film.film_id = film_category.film_id
+GROUP BY film_category.category_id
+ORDER BY film_category.category_id
+```
+
+## Question 7
+
+Incorporate the category table into the answer to the previous question to find the name of the most popular category.
+
+```{sql connection=con}
+SELECT category.name, COUNT(*) AS number_of_films
+FROM film
+INNER JOIN film_category
+ON film.film_id = film_category.film_id
+INNER JOIN category
+ON film_category.category_id = category.category_id
+GROUP BY category.category_id, category.name
+ORDER BY number_of_films DESC
+```
