@@ -10,14 +10,19 @@ embed-resources: true
 
 ```{r}
 library(microbenchmark)
+library(ggplot2)
 
 # Use the functions with this data
 set.seed(2315)
 dat <- matrix(rnorm(200 * 100), nrow = 200)
 ```
 
+For Questions 1 and 2, rewrite the provided R functions to make them faster. It is OK (and recommended) to take a look at StackOverflow and Google.
+
+Using the synthetic dataset provided, show that your new function returns the same output as the original function. Then use `microbenchmark` to show that your version is faster and provide a visualization of the runtimes.
 
 ## Question 1
+
 fun1: Find the total for each row of a numeric matrix. Output should be a vector with length equal to the number of rows of the input matrix.
 
 ```{r}
@@ -35,11 +40,21 @@ fun1alt <- function(mat) {
   rowSums(mat)
 }
 
+# Microbenchmark
 all.equal(fun1(dat), fun1alt(dat))
-microbenchmark(fun1(dat), fun1alt(dat))
+Runtime <- microbenchmark(fun1(dat), fun1alt(dat))
+print(Runtime)
+
+# Visualization
+ggplot(Runtime, aes(x=expr, y = time/1000, fill = expr)) + geom_boxplot() + labs(title="Fun1 Runtime Comparison", x = "Function", y = "Runtime (microseconds)")
 ```
 
+### Summary
+
+The table reveals that fun1 and fun1alt return the same output and the boxplots reveal that fun1alt is faster.
+
 ## Question 2
+
 fun2: Calculate the running (cumulative) total along each row of a numeric matrix. Output should be a matrix with dimensions equal to the input matrix.
 
 ```{r}
@@ -60,19 +75,27 @@ fun2alt <- function(mat) {
   t(apply(mat, 1, cumsum))
 }
 
+# Microbenchmark
 all.equal(fun2(dat), fun2alt(dat))
+Runtime2 <- microbenchmark(fun2(dat), fun2alt(dat))
+print(Runtime2)
 
-microbenchmark(fun2(dat), fun2alt(dat))
+# Visualization
+ggplot(Runtime2, aes(x=expr, y = time/1000, fill = expr)) + geom_boxplot() + labs(title="Fun1 Runtime Comparison", x = "Function", y = "Runtime (microseconds)")
 ```
+
+### Summary
+
+The table reveals that fun2 and fun2alt return the same output and the boxplots reveal that fun2alt is faster.
 
 ## Question 3
 
 For this question, we will ask you to parallelize a process for computationally estimating the value of pi.
 
 The following function allows us to estimate pi through a simple simulation:
+
 ```{r}
 library(parallel)
-library(ggplot2)
 
 sim_pi <- function(n = 1000, i = NULL) {
   p <- matrix(runif(n*2), ncol = 2)
@@ -83,7 +106,9 @@ sim_pi <- function(n = 1000, i = NULL) {
 set.seed(156)
 sim_pi(1000) # 3.132
 ```
+
 In order to get more accurate estimates, we can run this function multiple times and take the mean:
+
 ```{r}
 # This runs the simulation a 4,000 times, each with 10,000 points
 set.seed(1231)
@@ -92,7 +117,9 @@ system.time({
   print(mean(ans))
 })
 ```
+
 Rewrite the previous code using parLapply() (or your parallelization method of choice) to parallelize it. Run the code once, using system.time(), to show that your version is faster.
+
 ```{r}
 
 set.seed(1231)
@@ -109,10 +136,11 @@ Parallel <- system.time({
   stopCluster(cl)
 })
 ```
+
 Visualize your results in two ways:
 
-1. Show that both versions produce similar ranges of estimates for pi.
-2. Show that the parallel version runs faster.
+1.  Show that both versions produce similar ranges of estimates for pi.
+2.  Show that the parallel version runs faster.
 
 ```{r}
 # Show that both versions produce similar ranges of estimates for pi.
@@ -127,9 +155,14 @@ ggplot(Timing, aes(x=Method, y = Seconds, fill = Method))+ geom_col(width = 0.6)
 
 ```
 
+### Summary
+
+The boxplot reveals that both versions produce similar ranges of estimates for pi. The barchart reveals that the parallel version runs faster than the original version.
+
 # SQL
 
 Setup a temporary database of movie data by running the following code chunk:
+
 ```{r}
 # install.packages(c("RSQLite", "DBI"))
 
@@ -158,8 +191,12 @@ How many movies are available in each rating category?
 SELECT rating, COUNT(*) AS number_of_movies
 FROM film
 GROUP BY rating
-ORDER BY rating
+ORDER BY number_of_movies DESC
 ```
+
+### Summary
+
+There are 223 PG-13-rated movies, 210 NC-17-rated movies, 195 R-rated movies, 194 PG-rated movies, and 180 G-rated movies.
 
 ## Question 5
 
@@ -171,6 +208,10 @@ FROM film
 GROUP BY rating
 ORDER BY rating
 ```
+
+### Summary
+
+For G-rated movies, the average replacement cost is \~\$20.12 and the average rental rate is \~2.91. For NC-17-rated movies, the average replacement cost is \~20.14 and the average rental rate is \~2.97. For PG-rated movies, the average replacement cost is \~\$18.96 and the average rental rate is \~3.05. For PG-13-rated movies, the average replacement cost is \~\$20.40 and the average rental rate is \~3.03. For R-rated movies, the average replacement cost is \~\$20.23 and the average rental rate is \~2.94.
 
 ## Question 6
 
@@ -199,3 +240,7 @@ ON film_category.category_id = category.category_id
 GROUP BY category.category_id, category.name
 ORDER BY number_of_films DESC
 ```
+
+### Summary
+
+The most popular film category is "Sports," with 74 films.
