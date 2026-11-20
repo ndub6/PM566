@@ -51,7 +51,7 @@ ggplot(Runtime, aes(x=expr, y = time/1000, fill = expr)) + geom_boxplot() + labs
 
 ### Summary
 
-The table reveals that fun1 and fun1alt return the same output and the boxplots reveal that fun1alt is faster.
+The table reveals that fun1 and fun1alt return the same output. The microbenchmark output and the boxplots reveal that fun1alt is faster.
 
 ## Question 2
 
@@ -86,7 +86,7 @@ ggplot(Runtime2, aes(x=expr, y = time/1000, fill = expr)) + geom_boxplot() + lab
 
 ### Summary
 
-The table reveals that fun2 and fun2alt return the same output and the boxplots reveal that fun2alt is faster.
+The table reveals that fun2 and fun2alt return the same output. The microbenchmark output and the boxplots reveal that fun2alt is faster.
 
 ## Question 3
 
@@ -105,11 +105,8 @@ sim_pi <- function(n = 1000, i = NULL) {
 # Here is an example of the run
 set.seed(156)
 sim_pi(1000) # 3.132
-```
 
-In order to get more accurate estimates, we can run this function multiple times and take the mean:
-
-```{r}
+# In order to get more accurate estimates, we can run this function multiple times and take the mean:
 # This runs the simulation a 4,000 times, each with 10,000 points
 set.seed(1231)
 system.time({
@@ -121,16 +118,15 @@ system.time({
 Rewrite the previous code using parLapply() (or your parallelization method of choice) to parallelize it. Run the code once, using system.time(), to show that your version is faster.
 
 ```{r}
-
 set.seed(1231)
 Original <- system.time({
   ans_original <- unlist(lapply(1:4000, sim_pi, n = 10000))
   print(mean(ans))
 })
 
+cl <- makeCluster(2L)
+clusterSetRNGStream(cl,iseed = 1231)
 Parallel <- system.time({
-  cl <- makeCluster(2L)
-  clusterSetRNGStream(cl,iseed = 1231)
   ans_parallel <- unlist(parLapply(cl, 1:4000, sim_pi, n = 10000))
   print(mean(ans))
   stopCluster(cl)
@@ -244,3 +240,8 @@ ORDER BY number_of_films DESC
 ### Summary
 
 The most popular film category is "Sports," with 74 films.
+
+```{r}
+dbDisconnect(con)
+```
+
